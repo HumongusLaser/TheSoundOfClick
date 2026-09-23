@@ -1,4 +1,6 @@
-﻿namespace TheSoundOfClick;
+﻿using System.Globalization;
+
+namespace TheSoundOfClick;
 
 public abstract class Product
 {
@@ -43,11 +45,28 @@ public abstract class Product
     }
   }
 
-  public Product(Int128 id, int stock, string name, decimal price)
+    private string color = ""; 
+    public string Color
+    {
+        get { return color; }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Color cannot be empty.");
+            }
+            color = value;
+        }
+    }
+
+  public Product(Int128 id, int stock, string name, decimal price, string color)
   {
     ID = id;
     Stock = stock;
     Name = name;
     Price = price;
+    Color = color;
   }
+
+  public abstract string GetProductDetails();
 }

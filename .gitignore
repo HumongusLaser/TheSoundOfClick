@@ -1,3 +1,5 @@
 TheSoundOfClick/bin/**
 TheSoundOfClick/obj/**
 .vscode
+.vs/
+*.csproj.user
