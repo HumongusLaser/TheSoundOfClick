@@ -45,7 +45,7 @@ public class Mousepad : Product
     }
   }
 
-  public Mousepad(Int128 id, int stock, string name, decimal price, int length, int width, int thickness) : base(id, stock, name, price)
+  public Mousepad(Int128 id, int stock, string name, decimal price, string color, int length, int width, int thickness) : base(id, stock, name, price, color)
   {
     Length = length;
     Width = width;
@@ -56,4 +56,9 @@ public class Mousepad : Product
   {
     return (int)Math.Round(Math.Sqrt(Math.Pow(length, 2) + Math.Pow(width, 2)));
   }
+ public override string GetProductDetails()
+    {
+        return $"Mousepad: {Name}, Color: {Color}, Size: {Length}x{Width}mm, Thickness: {Thickness}mm";
+    }
+
 }
