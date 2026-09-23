@@ -45,7 +45,8 @@ public class Mousepad : Product
     }
   }
 
-  public Mousepad(Int128 id, int stock, string name, decimal price, string color, int length, int width, int thickness) : base(id, stock, name, price, color)
+  public Mousepad(Int128 id, int stock, string name, decimal price, string color, int length, int width, int thickness, string description, int netWeight, int grossWeight) : 
+    base(id, stock, name, price, color, description, netWeight, grossWeight)
   {
     Length = length;
     Width = width;
