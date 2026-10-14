@@ -29,7 +29,7 @@ public class User
   { get { return email; }
     set
     {
-      string strRegex = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$";
+      string strRegex = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"; 
       Regex regex = new Regex(strRegex);
 
       if (!regex.IsMatch(value))
@@ -39,14 +39,17 @@ public class User
       email = value;
     } 
   }
-  public string Address { get; set; }
-  private string phoneNumber = "";
+    public string StreetAddress { get; set; }
+    public string? Apartment { get; set; }
+    public string PostalCode { get; set; }
+    public string City { get; set; }
+    private string phoneNumber = "";
   public string PhoneNumber
   { get { return phoneNumber; }
     set
     {
-      string strRegex = @"^\+?[1-9]\d{1,14}$";
-      Regex regex = new Regex(strRegex);
+            string strRegex = @"^[0-9]{8}$";
+            Regex regex = new Regex(strRegex);
 
       if (!regex.IsMatch(value))
       {
@@ -60,7 +63,7 @@ public class User
 
   public User
   (
-    Int128 id, DateOnly registerDate, string firstName, string lastName, string email, string address, string phoneNumber, UserRole role, DiscountRole discountRole
+    Int128 id, DateOnly registerDate, string firstName, string lastName, string email, string streetAddress, string? apartment, string postalCode, string city, string phoneNumber, UserRole role, DiscountRole discountRole
   )
   {
     ID = id;
@@ -68,7 +71,10 @@ public class User
     FirstName = firstName;
     LastName = lastName;
     Email = email;
-    Address = address;
+    StreetAddress = streetAddress;
+    Apartment = apartment;
+    PostalCode = postalCode;
+    City = city;
     PhoneNumber = phoneNumber;
     Role = role;
     DiscountRole = discountRole;
