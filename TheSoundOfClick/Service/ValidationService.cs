@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
+
 namespace TheSoundOfClick;
 
 public class ValidationService
@@ -33,6 +34,10 @@ public class ValidationService
     }
     public bool IsValidPassword(string password)
     {
-        return !string.IsNullOrEmpty(password) && password.Length >= 16 && password.Count(char.IsUpper) >= 2 && password.Count(char.IsDigit) >= 2;
+        return !string.IsNullOrEmpty(password)
+            && password.Length >= 16
+            && password.Count(char.IsUpper) >= 2
+            && password.Count(char.IsDigit) >= 2
+            && password.Count(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c)) >= 2;
     }
 }
