@@ -26,7 +26,8 @@ public class User
   public string LastName { get; set; }
   private string email = "";
   public string Email 
-  { get { return email; }
+  { 
+    get { return email; }
     set
     {
       string strRegex = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"; 
@@ -39,17 +40,18 @@ public class User
       email = value;
     } 
   }
-    public string StreetAddress { get; set; }
-    public string? Apartment { get; set; }
-    public string PostalCode { get; set; }
-    public string City { get; set; }
-    private string phoneNumber = "";
+  public string StreetAddress { get; set; }
+  public string? Apartment { get; set; }
+  public string PostalCode { get; set; }
+  public string City { get; set; }
+  private string phoneNumber = "";
   public string PhoneNumber
-  { get { return phoneNumber; }
+  { 
+    get { return phoneNumber; }
     set
     {
-            string strRegex = @"^[0-9]{8}$";
-            Regex regex = new Regex(strRegex);
+      string strRegex = @"^[0-9]{8}$";
+      Regex regex = new Regex(strRegex);
 
       if (!regex.IsMatch(value))
       {
