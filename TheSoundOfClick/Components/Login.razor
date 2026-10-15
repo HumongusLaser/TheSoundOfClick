@@ -1,0 +1,47 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+
+<h1>Log ind</h1>
+
+<p>Log ind på din konto</p>
+
+<label>Email</label>
+<input type="email" @bind="Email" />
+
+<br />
+
+<label>Password</label>
+<input type="password" @bind="Password" />
+
+<br />
+
+<button @onclick="LoginUser">Log ind</button>
+
+<p>@Message</p>
+
+@code {
+    private string Email = "";
+    private string Password = "";
+    private string Message = "";
+
+    private void LoginUser()
+    {
+        Message = "";
+
+        ValidationService validationService = new ValidationService();
+
+        if (!validationService.IsValidEmail(Email))
+        {
+            Message = "Du skal skrive en gyldig emailadresse.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Password))
+        {
+            Message = "Du skal skrive dit password.";
+            return;
+        }
+
+        Message = "Loginoplysningerne er udfyldt. Login er endnu ikke implementeret.";
+    }
+}
