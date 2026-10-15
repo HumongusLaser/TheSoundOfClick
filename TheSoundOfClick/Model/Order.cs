@@ -1,6 +1,6 @@
 ﻿namespace TheSoundOfClick;
 
-public class Order
+public class Order : IOrder
 {
   public Int128 ID { get; init; }
   public DateTime DateCreated { get; init; }
