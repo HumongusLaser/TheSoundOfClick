@@ -1,0 +1,138 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+
+<h1>Opret bruger</h1>
+
+<p>Opret en konto</p>
+
+<label>Fornavn</label>
+<input type="text" @bind="FirstName" />
+
+<br />
+
+<label>Efternavn</label>
+<input type="text" @bind="LastName" />
+
+<br />
+    
+<label>Email</label>
+<input type="email" @bind="Email" />
+
+<br />
+
+<label>Vejnavn og husnummer</label>
+<input type="text" @bind="StreetAddress" />
+
+<br />
+
+<label>Etage og dør (valgfrit)</label>
+<input type="text" @bind="Apartment" />
+
+<br />
+
+<label>Postnummer</label>
+<input type="text" @bind="PostalCode" maxlength="4" />
+
+<br />
+
+<label>By</label>
+<input type="text" @bind="City" />
+
+<br />
+
+<label>Telefonnummer</label>
+<span>+45 </span>
+<input type="tel" @bind="PhoneNumber" maxlength="8" />     
+
+<br />
+
+<label>Password</label>
+<input type="password" @bind="Password" />
+
+<br />
+
+<label>Gentag password</label>
+<input type="password" @bind="ConfirmPassword" />
+
+<br />
+
+<button @onclick="RegisterUser">Opret bruger</button>
+<p>@Message</p>
+
+@code {
+    private string FirstName = "";
+    private string LastName = "";
+    private string Email = "";
+    private string StreetAddress = "";
+    private string Apartment = "";
+    private string PostalCode = "";
+    private string City = "";
+    private string PhoneNumber = "";
+    private string Password = "";
+    private string ConfirmPassword = "";
+    private string Message = "";
+
+    ValidationService validationService = new ValidationService();
+
+    private void RegisterUser()
+    {
+        Message = "";
+
+        if (!validationService.IsValidName(FirstName))
+        {
+            Message = "Du skal skrive dit fornavn.";
+            return;
+        }
+        if (!validationService.IsValidName(LastName))
+        {
+            Message = "Du skal skrive dit efternavn.";
+            return;
+        }
+
+        if (!validationService.IsValidEmail(Email))
+        {
+            Message = "Du skal skrive en gyldig emailadresse.";
+            return;
+        }
+        if (!validationService.IsValidAddress(StreetAddress))
+        {
+            Message = "Du skal skrive vejnavn og husnummer.";
+            return;
+        }
+
+        if (!validationService.IsValidPostalCode(PostalCode))
+        {
+            Message = "Du skal skrive et gyldigt postnummer med 4 tal.";
+            return;
+        }
+
+        if (!validationService.IsValidCity(City))
+        {
+            Message = "Du skal skrive din by.";
+            return;
+        }
+
+        if (!validationService.IsValidPhoneNumber(PhoneNumber))
+        {
+            Message = "Du skal skrive et gyldigt telefonnummer.";
+            return;
+        }
+
+        if (!validationService.IsValidPassword(Password))
+        {
+            Message = "Dit password skal indeholde mindst 16 tegn, 2 store bogstaver og 2 tal.";
+            return;
+        }
+
+        if (Password != ConfirmPassword)
+        {
+            Message = "Dine passwords er ikke ens.";
+            return;
+        }
+        
+        Message = "Alle oplysninger er godkendt. Brugeren er endnu ikke oprettet.";
+    }
+
+  
+
+}
