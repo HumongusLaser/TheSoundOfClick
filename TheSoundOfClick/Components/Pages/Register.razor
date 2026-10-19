@@ -47,9 +47,22 @@
 <br />
 
 <label>Password</label>
-<input type="password" @bind="Password" />
 
-<br />
+<p class="text-muted small mb-2">
+    Vælg et unikt password, som du ikke bruger andre steder.
+    <br />
+    Dit password skal indeholde:
+    <br />
+    • Mindst 16 tegn
+    <br />
+    • Mindst 2 store bogstaver
+    <br />
+    • Mindst 2 tal
+    <br />
+    • Mindst 2 specialtegn (fx !, # eller ?)
+</p>
+
+<input type="password" @bind="Password" />
 
 <label>Gentag password</label>
 <input type="password" @bind="ConfirmPassword" />
@@ -120,7 +133,7 @@
 
         if (!validationService.IsValidPassword(Password))
         {
-            Message = "Dit password skal indeholde mindst 16 tegn, 2 store bogstaver og 2 tal.";
+            Message = "Dit password overholder ikke kravene.";
             return;
         }
 

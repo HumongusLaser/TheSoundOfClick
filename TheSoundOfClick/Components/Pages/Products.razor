@@ -1,0 +1,76 @@
+﻿@page "/products"
+@rendermode InteractiveServer
+
+<h3>Produkter</h3>
+
+<p>Her kan du se vores udvalg af produkter.</p>
+<div class="row g-3">
+    @foreach (var product in products)
+    {
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">@product.Name</h5>
+
+                    <p class="card-text">@product.Description</p>
+
+                    <p class="card-text">
+                        Pris: @product.Price.ToString("0.00") kr.
+                    </p>
+
+                    <p class="card-text">
+                        På lager: @product.Stock
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Product> products = new List<Product>
+    {
+        new Keyboard(
+            1,
+            10,
+            "Gaming Keyboard",
+            599.95m,
+            "Black",
+            "Nordic",
+            true,
+            "Red Switches",
+            "Mekanisk gaming tastatur",
+            "TKL",
+            800,
+            1000
+        ),
+
+        new Keycap(
+            2,
+            25,
+            "Pink Keycaps",
+            199.95m,
+            "Pink",
+            "Pastel",
+            true,
+            "Et sæt lyserøde keycaps til mekaniske tastaturer",
+            104,
+            150,
+            200
+        ),
+
+        new Mousepad(
+            3,
+            15,
+            "Gaming Mousepad",
+            149.95m,
+            "Black",
+            900,
+            400,
+            4,
+            "Stor musemåtte til gaming",
+            600,
+            750
+        )
+    };
+}
