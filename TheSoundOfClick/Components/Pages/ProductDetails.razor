@@ -1,0 +1,68 @@
+﻿@page "/product/{Id:int}"
+@rendermode InteractiveServer
+@inject ProductService ProductService
+
+<h3>Produktdetaljer</h3>
+
+@if (product != null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h4>@product.Name</h4>
+
+            <p>@product.Description</p>
+
+            <p><strong>Pris:</strong> @product.Price.ToString("0.00") kr.</p>
+
+            <p><strong>Farve:</strong> @product.Color</p>
+
+            <p><strong>På lager:</strong> @product.Stock</p>
+
+            @if (product is Keyboard keyboard)
+            {
+                <p><strong>Layout:</strong> @keyboard.Layout</p>
+
+                <p><strong>Switch-type:</strong> @keyboard.SwitchType</p>
+
+                <p><strong>Størrelse:</strong> @keyboard.Size</p>
+
+                <p>
+                    <strong>Trådløst:</strong>
+                    @(keyboard.IsWireless ? "Ja" : "Nej")
+                </p>
+            }
+            @if (product is Keycap keycap)
+            {
+                <p><strong>Tema:</strong> @keycap.Theme</p>
+                <p><strong>Antal:</strong> @keycap.Amount</p>
+                <p>
+                    <strong>Kompatibel med baggrundsbelysning:</strong>
+                    @(keycap.IsBacklightCompatible ? "Ja" : "Nej")
+                </p>
+            }
+
+            @if (product is Mousepad mousepad)
+            {
+                <p><strong>Længde:</strong> @mousepad.Length mm</p>
+                <p><strong>Bredde:</strong> @mousepad.Width mm</p>
+                <p><strong>Tykkelse:</strong> @mousepad.Thickness mm</p>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <p>Produktet blev ikke fundet.</p>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Product? product;
+
+    protected override void OnParametersSet()
+    {
+        product = ProductService.GetProductById(Id);
+    }
+}

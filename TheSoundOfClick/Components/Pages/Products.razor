@@ -1,16 +1,62 @@
 ﻿@page "/products"
 @rendermode InteractiveServer
+@inject ProductService ProductService
+@using Microsoft.AspNetCore.RateLimiting
+@attribute [EnableRateLimiting("products")]
 
 <h3>Produkter</h3>
 
 <p>Her kan du se vores udvalg af produkter.</p>
+
+<!-- Filtrering og sortering -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-6">
+        <label for="categoryFilter" class="form-label">Kategori:</label>
+
+        <select id="categoryFilter"
+                class="form-select"
+                @bind="selectedCategory"
+                @bind:after="OnCategoryChanged">
+
+            <option value="all">Alle produkter</option>
+            <option value="keyboard">Tastaturer</option>
+            <option value="keycap">Keycaps</option>
+            <option value="mousepad">Musemåtter</option>
+
+        </select>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label for="sortOrder" class="form-label">Sorter efter:</label>
+
+        <select id="sortOrder"
+                class="form-select"
+                @bind="sortOrder"
+                @bind:after="OnSortChanged">
+
+            <option value="default">Standard</option>
+            <option value="priceAsc">Pris: Laveste først</option>
+            <option value="priceDesc">Pris: Højeste først</option>
+
+        </select>
+    </div>
+
+</div>
+
+<!-- Produktliste -->
 <div class="row g-3">
-    @foreach (var product in products)
+    @foreach (var product in pagedProducts)
     {
         <div class="col-12 col-md-6 col-lg-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">@product.Name</h5>
+
+                    <h5 class="card-title">
+                        <a href="@($"/product/{product.ID}")">
+                            @product.Name
+                        </a>
+                    </h5>
 
                     <p class="card-text">@product.Description</p>
 
@@ -21,56 +67,119 @@
                     <p class="card-text">
                         På lager: @product.Stock
                     </p>
+
                 </div>
             </div>
         </div>
     }
 </div>
 
+<!-- Pagination -->
+<div class="d-flex justify-content-center align-items-center gap-3 mt-4">
+
+    <button class="btn btn-outline-primary"
+            disabled="@(currentPage == 1)"
+            @onclick="PreviousPage">
+        Forrige
+    </button>
+
+    <span>Side @currentPage af @totalPages</span>
+
+    <button class="btn btn-outline-primary"
+            disabled="@(currentPage == totalPages)"
+            @onclick="NextPage">
+        Næste
+    </button>
+
+</div>
+
 @code {
-    private List<Product> products = new List<Product>
+    private List<Product> products = new();
+
+    private int currentPage = 1;
+
+    // Maksimalt 20 produkter pr. side
+    private const int MaxPageSize = 20;
+
+    // Vi bruger 2 produkter pr. side, mens vi tester
+    private int pageSize = 2;
+
+    // Sikrer, at page size altid er mellem 1 og 20
+    private int SafePageSize => Math.Clamp(pageSize, 1, MaxPageSize);
+
+    // Beregner antallet af sider ud fra de filtrerede produkter
+    private int totalPages =>
+        Math.Max(1, (int)Math.Ceiling((double)filteredProducts.Count() / SafePageSize));
+
+    // Gemmer brugerens valg af kategori
+    private string selectedCategory = "all";
+
+    // Filtrerer produkterne efter kategori
+    // Ukendte værdier giver en tom liste
+    private IEnumerable<Product> filteredProducts =>
+        selectedCategory switch
+        {
+            "keyboard" => products.OfType<Keyboard>(),
+            "keycap" => products.OfType<Keycap>(),
+            "mousepad" => products.OfType<Mousepad>(),
+            "all" => products,
+            _ => Enumerable.Empty<Product>()
+        };
+
+    // Gemmer brugerens valg af sortering
+    private string sortOrder = "default";
+
+    // Sorterer de filtrerede produkter
+    // Ukendte værdier giver standardrækkefølgen
+    private IEnumerable<Product> sortedProducts =>
+        sortOrder switch
+        {
+            "priceAsc" => filteredProducts.OrderBy(p => p.Price),
+            "priceDesc" => filteredProducts.OrderByDescending(p => p.Price),
+            _ => filteredProducts.OrderBy(p => p.ID)
+        };
+
+    // TODO: Når databasen er klar, skal filtrering, sortering og pagination ske direkte i SQL.
+    // Vi skal bruge parameterized queries og begrænse page size,
+    // så vi kun henter de nødvendige produkter fra databasen.
+    private IEnumerable<Product> pagedProducts =>
+        sortedProducts
+            .Skip((currentPage - 1) * SafePageSize)
+            .Take(SafePageSize);
+
+    // Henter produkterne fra ProductService
+    protected override void OnInitialized()
     {
-        new Keyboard(
-            1,
-            10,
-            "Gaming Keyboard",
-            599.95m,
-            "Black",
-            "Nordic",
-            true,
-            "Red Switches",
-            "Mekanisk gaming tastatur",
-            "TKL",
-            800,
-            1000
-        ),
+        products = ProductService.GetAllProducts();
+    }
 
-        new Keycap(
-            2,
-            25,
-            "Pink Keycaps",
-            199.95m,
-            "Pink",
-            "Pastel",
-            true,
-            "Et sæt lyserøde keycaps til mekaniske tastaturer",
-            104,
-            150,
-            200
-        ),
+    // Går tilbage til side 1, når kategorien ændres
+    private void OnCategoryChanged()
+    {
+        currentPage = 1;
+    }
 
-        new Mousepad(
-            3,
-            15,
-            "Gaming Mousepad",
-            149.95m,
-            "Black",
-            900,
-            400,
-            4,
-            "Stor musemåtte til gaming",
-            600,
-            750
-        )
-    };
+    // Går tilbage til side 1, når sorteringen ændres
+    private void OnSortChanged()
+    {
+        currentPage = 1;
+    }
+
+    // Går til næste side
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+        }
+    }
+
+    // Går til forrige side
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+        }
+    }
 }
