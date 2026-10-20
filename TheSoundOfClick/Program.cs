@@ -3,7 +3,6 @@ using Npgsql;
 using TheSoundOfClick;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using TheSoundOfClick;
 using TheSoundOfClick.Components;
 
 var builder = WebApplication.CreateBuilder(args);
