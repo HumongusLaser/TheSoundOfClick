@@ -65,7 +65,8 @@ public class User
 
   public User
   (
-    Int128 id, DateOnly registerDate, string firstName, string lastName, string email, string streetAddress, string? apartment, string postalCode, string city, string phoneNumber, UserRole role, DiscountRole discountRole
+    Int128 id, DateOnly registerDate, string firstName, string lastName, string email, string streetAddress, string? apartment, string postalCode, string city, string phoneNumber, 
+    UserRole role, DiscountRole discountRole
   )
   {
     ID = id;

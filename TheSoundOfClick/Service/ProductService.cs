@@ -14,7 +14,7 @@
                 2, 25, "Pink Keycaps", 199.95m, "Pink",
                 "Pastel", true,
                 "Et sæt lyserøde keycaps til mekaniske tastaturer",
-                104, 150, 200
+                104, 150
             ),
 
             new Mousepad(
