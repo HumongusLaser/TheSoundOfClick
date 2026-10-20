@@ -15,6 +15,7 @@ public abstract class Product
   public Int128 ID { get; init; }
 
   private int stock;
+  [JsonIgnore]
   public int Stock 
   { get { return stock; } 
     set
