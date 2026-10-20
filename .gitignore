@@ -3,3 +3,4 @@ TheSoundOfClick/obj/**
 .vscode
 .vs/
 *.csproj.user
+TheSoundOfClick/secret.json

@@ -1,5 +1,6 @@
 ﻿namespace TheSoundOfClick
 {
+	[ProductCategory("keycap")]
 	public class Keycap : Product
 	{
 		private string theme = "";
@@ -19,8 +20,8 @@
 		
 		public int Amount { get; set; }
 
-		public Keycap(Int128 id, int stock, string name, decimal price, string color, string theme, bool isBacklightCompatible, string description, int amount, int netWeight, int grossWeight) : 
-			base(id, stock, name, price, color, description, netWeight, grossWeight)
+		public Keycap(Int128 id, int stock, string name, decimal price, string color, string theme, bool isBacklightCompatible, string description, int amount, int netWeight) : 
+			base(id, stock, name, price, color, description, netWeight)
 		{
 			Theme = theme;
 			IsBacklightCompatible = isBacklightCompatible;

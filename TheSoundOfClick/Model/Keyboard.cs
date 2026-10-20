@@ -1,5 +1,6 @@
 ﻿namespace TheSoundOfClick
 {
+  [ProductCategory("keyboard")]
   public class Keyboard : Product
   {
     private string layout = "";
@@ -33,7 +34,7 @@
     public string Size { get; set; }
 
     public Keyboard(Int128 id, int stock, string name, decimal price, string color, string layout, bool isWireless, string switchType, string description, string size, int netWeight, int grossWeight) : 
-      base(id, stock, name, price, color, description, netWeight, grossWeight)
+      base(id, stock, name, price, color, description, netWeight)
     {
       Layout = layout;
       IsWireless = isWireless;

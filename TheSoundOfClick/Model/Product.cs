@@ -1,9 +1,17 @@
 ﻿using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace TheSoundOfClick;
 
+[AttributeUsage(AttributeTargets.Class)]
+public class ProductCategoryAttribute(string name) : Attribute
+{
+  public string Name { get; } = name;
+}
+
 public abstract class Product
 {
+  [JsonIgnore]
   public Int128 ID { get; init; }
 
   private int stock;
@@ -20,6 +28,7 @@ public abstract class Product
   }
 
   private string name = "";
+  [JsonIgnore]
   public string Name 
   { get { return name; }
     set
@@ -33,6 +42,7 @@ public abstract class Product
   }
   
   private decimal price;
+  [JsonIgnore]
   public decimal Price 
   { get { return price; } 
     set
@@ -45,7 +55,8 @@ public abstract class Product
     }
   }
 
-  private string color = ""; 
+  private string color = "";
+  [JsonIgnore]
   public string Color
   {
     get { return color; }
@@ -59,27 +70,29 @@ public abstract class Product
     }
   }
 
+  [JsonIgnore]
   public string Description { get; set; }
 
   // Weights are in grams
   private int netWeight;
+  [JsonIgnore]
   public int NetWeight { get; set; }
 
-  private int grossWeight;
-  public int GrossWeight 
-  { 
-    get { return grossWeight; }
-    set
-    {
-      if (value < NetWeight)
-      {
-        throw new ArgumentException("Gross weight cant be less than netweight");
-      }
-      grossWeight = value;
-    }
-  }
+  // private int grossWeight;
+  // public int GrossWeight 
+  // { 
+  //   get { return grossWeight; }
+  //   set
+  //   {
+  //     if (value < NetWeight)
+  //     {
+  //       throw new ArgumentException("Gross weight cant be less than netweight");
+  //     }
+  //     grossWeight = value;
+  //   }
+  // }
 
-  public Product(Int128 id, int stock, string name, decimal price, string color, string description, int netWeight, int grossWeight)
+  public Product(Int128 id, int stock, string name, decimal price, string color, string description, int netWeight)
   {
     ID = id;
     Stock = stock;
@@ -88,7 +101,6 @@ public abstract class Product
     Color = color;
     Description = description;
     NetWeight = netWeight;
-    GrossWeight = grossWeight;
   }
 
   public abstract string GetProductDetails();

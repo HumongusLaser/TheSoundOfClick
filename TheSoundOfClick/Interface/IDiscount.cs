@@ -2,5 +2,5 @@
 
 public interface IDiscount
 {
-  public void Apply(decimal price);
+  public decimal Apply(decimal price);
 }
