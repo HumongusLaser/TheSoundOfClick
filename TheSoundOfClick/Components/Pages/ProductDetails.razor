@@ -1,4 +1,5 @@
-﻿@page "/product/{Id:int}"
+﻿@page "/product/{Id}"
+@using System.Reflection
 @rendermode InteractiveServer
 @inject ProductService ProductService
 
@@ -9,8 +10,27 @@
     <div class="card">
         <div class="card-body">
             <h4>@product.Name</h4>
-
             <p>@product.Description</p>
+            @foreach (PropertyInfo type in product.GetType().GetProperties())
+            {
+                switch (type.Name)
+                {
+                    case nameof(product.Name):
+                        break;
+
+                    case nameof(product.Description):
+                        break;
+                    
+                    case nameof(product.ID):
+                        break;
+                        
+                    default:
+                        <p><strong>@GetProperyName(type)</strong> @type.GetValue(product)</p>
+                        break;
+                }
+                
+            }
+            @* 
 
             <p><strong>Pris:</strong> @product.Price.ToString("0.00") kr.</p>
 
@@ -46,7 +66,7 @@
                 <p><strong>Længde:</strong> @mousepad.Length mm</p>
                 <p><strong>Bredde:</strong> @mousepad.Width mm</p>
                 <p><strong>Tykkelse:</strong> @mousepad.Thickness mm</p>
-            }
+            } *@
         </div>
     </div>
 }
@@ -57,12 +77,27 @@ else
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
 
     private Product? product;
 
     protected override void OnParametersSet()
     {
-        product = ProductService.GetProductById(Id);
+        Int128 id;
+        try
+        {
+            id = Int128.Parse(Id);
+        }
+        catch (Exception)
+        {
+            product = null;
+            return;
+        }
+        product = ProductService.GetProductById(id);
+    }
+
+    protected string GetProperyName(PropertyInfo info)
+    {
+        return PropertyNameHelper.GetPropertyAttributeName(info) ?? info.Name;
     }
 }

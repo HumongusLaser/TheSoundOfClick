@@ -29,7 +29,7 @@
             return products;
         }
 
-        public Product? GetProductById(int id)
+        public Product? GetProductById(Int128 id)
         {
             return products.FirstOrDefault(product => product.ID == id);
         }
