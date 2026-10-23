@@ -15,13 +15,7 @@
             {
                 switch (propCached.Property.Name)
                 {
-                    case nameof(product.Name):
-                        break;
-
-                    case nameof(product.Description):
-                        break;
-                    
-                    case nameof(product.ID):
+                    case nameof(product.Name) or nameof(product.Description) or nameof(product.ID):
                         break;
                         
                     default:
