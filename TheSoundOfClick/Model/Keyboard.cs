@@ -4,6 +4,7 @@
   public class Keyboard : Product
   {
     private string layout = "";
+    [UserPageNameProp("Layout")]
     public string Layout 
     {
       get { return layout; }
@@ -16,8 +17,10 @@
         layout = value;
       }
     }
+    [UserPageNameProp("Is wireless")]
     public bool IsWireless { get; set; }
     private string switchType = "";
+    [UserPageNameProp("SwitchType")]
     public string SwitchType
     {
       get { return switchType; }

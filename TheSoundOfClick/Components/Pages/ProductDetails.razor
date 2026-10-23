@@ -1,4 +1,5 @@
-﻿@page "/product/{Id:int}"
+﻿@page "/product/{Id}"
+@using System.Reflection
 @rendermode InteractiveServer
 @inject ProductService ProductService
 
@@ -9,8 +10,21 @@
     <div class="card">
         <div class="card-body">
             <h4>@product.Name</h4>
-
             <p>@product.Description</p>
+            @foreach (CachedProperty propCached in PropertyNameHelper.GetPropertiesWithMetaData(product.GetType()))
+            {
+                switch (propCached.Property.Name)
+                {
+                    case nameof(product.Name) or nameof(product.Description) or nameof(product.ID):
+                        break;
+                        
+                    default:
+                        <p><strong>@GetUserProperyName(propCached)</strong> @propCached.Property.GetValue(product)</p>
+                        break;
+                }
+                
+            }
+            @* 
 
             <p><strong>Pris:</strong> @product.Price.ToString("0.00") kr.</p>
 
@@ -46,7 +60,7 @@
                 <p><strong>Længde:</strong> @mousepad.Length mm</p>
                 <p><strong>Bredde:</strong> @mousepad.Width mm</p>
                 <p><strong>Tykkelse:</strong> @mousepad.Thickness mm</p>
-            }
+            } *@
         </div>
     </div>
 }
@@ -57,12 +71,27 @@ else
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
 
     private Product? product;
 
     protected override void OnParametersSet()
     {
-        product = ProductService.GetProductById(Id);
+        Int128 id;
+        try
+        {
+            id = Int128.Parse(Id);
+        }
+        catch (Exception)
+        {
+            product = null;
+            return;
+        }
+        product = ProductService.GetProductById(id);
+    }
+
+    private string GetUserProperyName(CachedProperty property)
+    {
+        return property.UserPageName ?? property.Property.Name;
     }
 }
