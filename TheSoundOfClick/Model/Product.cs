@@ -15,6 +15,12 @@ public class UserPageNamePropAttribute(string name) : Attribute
   public string Name { get; } = name;
 }
 
+[AttributeUsage(AttributeTargets.Property)]
+public class DataBaseNamePropAttribute(string name) : Attribute
+{
+  public string Name { get; } = name;
+}
+
 public abstract class Product
 {
   [JsonIgnore]

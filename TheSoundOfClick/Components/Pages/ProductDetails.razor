@@ -11,9 +11,9 @@
         <div class="card-body">
             <h4>@product.Name</h4>
             <p>@product.Description</p>
-            @foreach (PropertyInfo type in product.GetType().GetProperties())
+            @foreach (CachedProperty propCached in PropertyNameHelper.GetPropertiesWithMetaData(product.GetType()))
             {
-                switch (type.Name)
+                switch (propCached.Property.Name)
                 {
                     case nameof(product.Name):
                         break;
@@ -25,7 +25,7 @@
                         break;
                         
                     default:
-                        <p><strong>@GetProperyName(type)</strong> @type.GetValue(product)</p>
+                        <p><strong>@GetUserProperyName(propCached)</strong> @propCached.Property.GetValue(product)</p>
                         break;
                 }
                 
@@ -96,8 +96,8 @@ else
         product = ProductService.GetProductById(id);
     }
 
-    protected string GetProperyName(PropertyInfo info)
+    private string GetUserProperyName(CachedProperty property)
     {
-        return PropertyNameHelper.GetPropertyAttributeName(info) ?? info.Name;
+        return property.UserPageName ?? property.Property.Name;
     }
 }
