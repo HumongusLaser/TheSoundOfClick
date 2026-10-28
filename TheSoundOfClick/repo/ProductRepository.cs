@@ -4,6 +4,13 @@ using NpgsqlTypes;
 
 namespace TheSoundOfClick;
 
+enum ProductFilters
+{
+  Category,
+  Price,
+  
+}
+
 public class ProductRepository
 {
   private readonly NpgsqlDataSource m_dataSource;
@@ -36,5 +43,10 @@ public class ProductRepository
 
     await cmd.ExecuteNonQueryAsync();
 
+  }
+
+  public async Task GetAsync(Int128 id, int amount, string filter)
+  {
+    
   }
 }

@@ -6,6 +6,7 @@ public static class ProductFactory
 {
   private static readonly Dictionary<string, Type> Types = typeof(Product).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Product)) && !t.IsAbstract)
   .ToDictionary(t => t.GetCustomAttribute<ProductCategoryAttribute>()!.Name, t => t);
+  public static readonly List<string> Colors = Enum.GetNames(typeof(Product.Colors)).ToList();
 
   public static Product Create(string category, string detailsJson)
   {

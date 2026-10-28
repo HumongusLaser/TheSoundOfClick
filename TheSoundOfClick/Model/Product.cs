@@ -23,6 +23,22 @@ public class DataBaseNamePropAttribute(string name) : Attribute
 
 public abstract class Product
 {
+  public enum Colors
+  {
+    Black,
+    White,
+    Red,
+    Blue,
+    Yellow,
+    Green,
+    Orange,
+    Purple,
+    Pink,
+    Brown,
+    Silver,
+    Multi
+  }
+
   [JsonIgnore]
   public Int128 ID { get; init; }
 
@@ -90,6 +106,8 @@ public abstract class Product
   private int netWeight;
   [JsonIgnore]
   public int NetWeight { get; set; }
+  [JsonIgnore]
+  public DateOnly CreationDate { get; init; }
 
   // private int grossWeight;
   // public int GrossWeight 
