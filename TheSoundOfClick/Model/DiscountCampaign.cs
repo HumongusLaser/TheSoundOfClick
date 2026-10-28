@@ -21,7 +21,7 @@ public enum DiscountThresholdType
 
 public class DiscountCampaign
 {
-  public Int128 ID { get; init; }
+  public Guid ID { get; init; }
   private string m_name = "";
   public string Name 
   { 
@@ -84,7 +84,7 @@ public class DiscountCampaign
 
   public DiscountCampaign
   (
-    Int128 campainID,
+    Guid campainID,
     string name,
     DiscountType discountType,
     decimal value,

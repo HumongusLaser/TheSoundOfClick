@@ -76,7 +76,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!Int128.TryParse(Id, out Int128 id))
+        if (!Guid.TryParse(Id, out Guid id))
         {
             product = null;
             return;

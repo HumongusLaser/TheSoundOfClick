@@ -11,6 +11,12 @@ public class ProductService
 
     public async Task<List<Product>> GetAllProductsAsync()
     {
-        return await _productRepository.GetProductsAsync();
+        return [];
+        // return await _productRepository.GetProductsAsync();
+    }
+    
+    public async Task<Product> GetProductAsync(Guid id)
+    {
+        return await _productRepository.GetProductsAsync(id);
     }
 }

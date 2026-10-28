@@ -6,8 +6,7 @@ public enum UserRole
 {
   Employee,
   Admin,
-  Customer,
-  Student
+  Customer
 }
 
 public enum DiscountRole
@@ -20,7 +19,7 @@ public enum DiscountRole
 
 public class User
 {
-  public Int128 ID { get; init; }
+  public Guid ID { get; init; }
   public DateOnly RegisterDate { get; init; }
   public string FirstName { get; set; }
   public string LastName { get; set; }
@@ -65,7 +64,7 @@ public class User
 
   public User
   (
-    Int128 id, DateOnly registerDate, string firstName, string lastName, string email, string streetAddress, string? apartment, string postalCode, string city, string phoneNumber, 
+    Guid id, DateOnly registerDate, string firstName, string lastName, string email, string streetAddress, string? apartment, string postalCode, string city, string phoneNumber, 
     UserRole role, DiscountRole discountRole
   )
   {

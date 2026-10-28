@@ -24,7 +24,7 @@ public class DataBaseNamePropAttribute(string name) : Attribute
 public abstract class Product
 {
   [JsonIgnore]
-  public Int128 ID { get; init; }
+  public Guid ID { get; set; }
 
   private int stock;
   [JsonIgnore]
@@ -105,7 +105,7 @@ public abstract class Product
   //   }
   // }
 
-  public Product(Int128 id, int stock, string name, decimal price, string color, string description, int netWeight)
+  public Product(Guid id, int stock, string name, decimal price, string color, string description, int netWeight)
   {
     ID = id;
     Stock = stock;

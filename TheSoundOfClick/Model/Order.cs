@@ -2,7 +2,7 @@
 
 public class Order : IOrder
 {
-  public Int128 ID { get; init; }
+  public Guid ID { get; init; }
   public DateTime DateCreated { get; init; }
   public string Status { get; set; }
   public decimal TotalPrice { get; set; }
@@ -10,7 +10,7 @@ public class Order : IOrder
   public Dictionary<Product, int> OrderList { get; set; }
   public IShippingProvider ShippingProvider { get; set; }
 
-  public Order(Int128 id, DateTime dateCreated, string status, decimal totalPrice, string shippingAddress, Dictionary<Product, int> orderList, IShippingProvider shippingProvider)
+  public Order(Guid id, DateTime dateCreated, string status, decimal totalPrice, string shippingAddress, Dictionary<Product, int> orderList, IShippingProvider shippingProvider)
   {
     ID = id;
     DateCreated = dateCreated;

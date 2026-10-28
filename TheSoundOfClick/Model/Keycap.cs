@@ -20,7 +20,7 @@
 		
 		public int Amount { get; set; }
 
-		public Keycap(Int128 id, int stock, string name, decimal price, string color, string theme, bool isBacklightCompatible, string description, int amount, int netWeight) : 
+		public Keycap(Guid id, int stock, string name, decimal price, string color, string theme, bool isBacklightCompatible, string description, int amount, int netWeight) : 
 			base(id, stock, name, price, color, description, netWeight)
 		{
 			Theme = theme;

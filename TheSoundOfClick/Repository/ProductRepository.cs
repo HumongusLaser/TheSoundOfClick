@@ -40,21 +40,22 @@ public class ProductRepository
     await cmd.ExecuteNonQueryAsync();
 
   }
-    public async Task<List<Product>> GetProductsAsync()
+    public async Task<Product> GetProductsAsync(Guid id)
     {
-        List<Product> products = new List<Product>();
+        Product? product = null;
         await using var connection = await m_dataSource.OpenConnectionAsync();
 
         await using var cmd = new NpgsqlCommand(
-            "SELECT id, name, price, stock, color, description, net_weight, category, details FROM products",
+            "SELECT id, name, price, stock, color, description, net_weight, category, details FROM products WHERE id = @id",
             connection
         );
+        cmd.Parameters.AddWithValue("id", id);
 
         await using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
         {
-            Guid id = reader.GetGuid(0);
+            Guid gid = reader.GetGuid(0);
             string name = reader.GetString(1);
             decimal price = reader.GetDecimal(2);
             int stock = reader.GetInt32(3);
@@ -65,21 +66,21 @@ public class ProductRepository
             string details = reader.GetString(8);
 
 
-            Product product = ProductMapper.MapProduct(
-                id,
-                stock,
-                name,
-                price,
-                color,
-                description,
-                netWeight,
-                category,
-                details
-            );
-
-            products.Add(product);
+            product = ProductFactory.Create(category, details);
+            product.ID = gid;
+            product.Name = name;
+            product.Price = price;
+            product.Stock = stock;
+            product.Color = color;
+            product.Description = description;
+            product.NetWeight = netWeight;
         }
-        return products;
+        
+        if (product == null)
+        {
+            throw new NotFoundException($"No such product with id {id}");
+        }
+        return product;
     }
 
 }
