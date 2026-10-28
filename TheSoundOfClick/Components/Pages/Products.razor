@@ -147,10 +147,10 @@
             .Skip((currentPage - 1) * SafePageSize)
             .Take(SafePageSize);
 
-    // Henter produkterne fra ProductService
-    protected override void OnInitialized()
+    //  Henter produkterne fra PostgreSQL gennem ProductService
+    protected override async Task OnInitializedAsync()
     {
-        products = ProductService.GetAllProducts();
+        products = await ProductService.GetAllProductsAsync();
     }
 
     // Går tilbage til side 1, når kategorien ændres

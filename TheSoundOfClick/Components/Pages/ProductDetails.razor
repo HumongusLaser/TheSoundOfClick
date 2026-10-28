@@ -74,19 +74,17 @@ else
 
     private Product? product;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        Int128 id;
-        try
-        {
-            id = Int128.Parse(Id);
-        }
-        catch (Exception)
+        if (!Int128.TryParse(Id, out Int128 id))
         {
             product = null;
             return;
         }
-        product = ProductService.GetProductById(id);
+
+        var products = await ProductService.GetAllProductsAsync();
+
+        product = products.FirstOrDefault(p => p.ID == id);
     }
 
     private string GetUserProperyName(CachedProperty property)
