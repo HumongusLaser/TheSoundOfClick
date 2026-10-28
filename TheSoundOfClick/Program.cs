@@ -4,8 +4,27 @@ using TheSoundOfClick;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TheSoundOfClick.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAuthentication(
+    CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "TheSoundOfClick.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/access-denied";
+
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -28,6 +47,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddScoped<ProductService>();
 
+
 string secretFile = File.ReadAllText("secret.json");
 
 string connectionString;
@@ -41,12 +61,16 @@ using (JsonDocument secretJson = JsonDocument.Parse(secretFile))
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddScoped<DiscountRepository>();
 builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<UserLoginRepository>();
+builder.Services.AddScoped<HashingService>();
+builder.Services.AddScoped<LoginService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
   .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -58,6 +82,10 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseRateLimiter();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();
