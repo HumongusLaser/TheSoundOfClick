@@ -19,7 +19,7 @@
                         break;
                         
                     default:
-                        <p><strong>@GetUserProperyName(propCached)</strong> @propCached.Property.GetValue(product)</p>
+                        <p><strong>@GetUserPropertyName(propCached)</strong> @GetUserPropertyValue(propCached)</p>
                         break;
                 }
             }
@@ -89,8 +89,18 @@ else
         product = ProductService.GetProductById(id);
     }
 
-    private string GetUserProperyName(CachedProperty property)
+    private string GetUserPropertyName(CachedProperty property)
     {
         return property.UserPageName ?? property.Property.Name;
+    }
+
+    private string GetUserPropertyValue(CachedProperty property)
+    {
+        if (property.Property.PropertyType == typeof(bool))
+        {
+            return property.Property.GetValue(product) is true ? "Ja" : "Nej";
+        }
+
+        return property.Property.GetValue(product)?.ToString() ?? "";
     }
 }
