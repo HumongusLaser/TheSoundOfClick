@@ -150,7 +150,7 @@
     //  Henter produkterne fra PostgreSQL gennem ProductService
     protected override async Task OnInitializedAsync()
     {
-        products = await ProductService.GetAllProductsAsync();
+        @* products = await ProductService.GetAllProductsAsync(); *@
     }
 
     // Går tilbage til side 1, når kategorien ændres

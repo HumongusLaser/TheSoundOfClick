@@ -82,9 +82,7 @@ else
             return;
         }
 
-        var products = await ProductService.GetAllProductsAsync();
-
-        product = products.FirstOrDefault(p => p.ID == id);
+        product = await ProductService.GetProductAsync(id);
     }
 
     private string GetUserProperyName(CachedProperty property)

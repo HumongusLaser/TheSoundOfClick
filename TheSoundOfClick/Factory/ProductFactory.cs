@@ -22,6 +22,12 @@ public static class ProductFactory
     return product.GetType().GetCustomAttribute<ProductCategoryAttribute>()!.Name;
   }
 
+  public static string GetCategory(Type product)
+  {
+    return product.GetCustomAttribute<ProductCategoryAttribute>()!.Name;
+  }
+
+
   public static string SerializeDetails(Product product)
   {
     return JsonSerializer.Serialize(product, product.GetType());

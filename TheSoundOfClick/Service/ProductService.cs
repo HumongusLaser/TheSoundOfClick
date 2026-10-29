@@ -9,14 +9,13 @@ public class ProductService
         _productRepository = productRepository;
     }
 
-    public async Task<List<Product>> GetAllProductsAsync()
+    public async Task<List<Product>> GetAllProductsAsync(Guid? id, string category, int batchSize)
     {
-        return [];
-        // return await _productRepository.GetProductsAsync();
+        return await _productRepository.GetProductsAsync(id, category, batchSize);
     }
     
     public async Task<Product> GetProductAsync(Guid id)
     {
-        return await _productRepository.GetProductsAsync(id);
+        return await _productRepository.GetProductAsync(id);
     }
 }

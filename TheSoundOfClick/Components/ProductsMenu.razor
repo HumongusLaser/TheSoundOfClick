@@ -1,6 +1,10 @@
 ﻿@page "/products-menu"
 @rendermode InteractiveServer
+@using System.Collections
+@using System.Text.Json
+@using System.Text.Json.Nodes
 @using Microsoft.AspNetCore.Authorization
+@inject ProductRepository ProductRepo
 @* @attribute [Authorize(Roles = "Employee,Admin")] *@
 
 <h3>Produktadministration</h3>
@@ -12,9 +16,10 @@
 
     <select class="form-select" @bind="selectedCategory">
         <option value="">Vælg kategori...</option>
-        <option value="keyboard">Keyboard</option>
-        <option value="keycap">Keycap</option>
-        <option value="mousepad">Mousepad</option>
+        @foreach(var category in ProductHelper.SubClassesUserName)
+        {
+            <option value="keyboard">@category.Key</option>
+        }
     </select>
 </div>
 
@@ -54,6 +59,9 @@
         <input type="number" min="0"
                class="form-control" @bind="productNetWeight" />
     </div>
+    
+    @foreach(var property in )
+    @*
     @if (selectedCategory == "keyboard")
     {
         <h4>Oplysninger om tastaturet</h4>
@@ -135,7 +143,7 @@
     @if (!string.IsNullOrEmpty(statusMessage))
     {
         <p class="mt-3">@statusMessage</p>
-    }
+    } *@
 
 }
 
@@ -159,7 +167,7 @@
     private int mousepadThickness = 1;
     private string statusMessage = "";
 
-    private void PrepareProduct()
+    private async Task PrepareProduct()
     {
         if (string.IsNullOrWhiteSpace(productName) || productName.Trim().Length < 2)
         {
@@ -241,5 +249,25 @@
                 return;
             }
         }
+
+        JsonObject json = new JsonObject
+        {
+            ["Layout"] = keyboardLayout,
+            ["SwitchType"] = keyboardSwitchType,
+            ["Size"] = keyboardSize,
+            ["IsWireless"] = keyboardIsWireless
+        };
+        @* Product product = new Keyboard(Guid.Empty, productStock, productName, productPrice, productColor, "", false, "", productDescription, "", productNetWeight, 0); *@
+        
+        string extraData = json.ToJsonString();
+
+        Product product = ProductFactory.Create(ProductFactory.GetCategory(typeof(Keyboard)), extraData);
+        product.Name = productName;
+        product.Color = productColor;
+        product.NetWeight = productNetWeight;
+        product.Price = productPrice;
+        product.Stock = productStock;
+
+        await ProductRepo.CreateAsync(product);
     }
 }

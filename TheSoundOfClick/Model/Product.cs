@@ -9,6 +9,12 @@ public class ProductCategoryAttribute(string name) : Attribute
   public string Name { get; } = name;
 }
 
+[AttributeUsage(AttributeTargets.Class)]
+public class ProductCategoryUserViewAttribute(string name) : Attribute
+{
+  public string Name { get; } = name;
+}
+
 [AttributeUsage(AttributeTargets.Property)]
 public class UserPageNamePropAttribute(string name) : Attribute
 {
@@ -84,7 +90,7 @@ public abstract class Product
   }
 
   [JsonIgnore]
-  public string Description { get; set; }
+  public string Description { get; set; } = "";
 
   // Weights are in grams
   private int netWeight;
@@ -115,6 +121,8 @@ public abstract class Product
     Description = description;
     NetWeight = netWeight;
   }
+
+  public Product(){}
 
   public abstract string GetProductDetails();
 }

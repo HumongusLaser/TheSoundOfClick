@@ -1,6 +1,7 @@
 ﻿namespace TheSoundOfClick
 {
 	[ProductCategory("keycap")]
+	[ProductCategoryUserView("Keycap")]
 	public class Keycap : Product
 	{
 		private string theme = "";
@@ -27,6 +28,8 @@
 			IsBacklightCompatible = isBacklightCompatible;
 			Amount = amount;
 		}
+
+		public Keycap(){}
 
 		public override string GetProductDetails()
 		{

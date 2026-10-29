@@ -1,6 +1,7 @@
 ﻿namespace TheSoundOfClick;
 
 [ProductCategory("mousepad")]
+[ProductCategoryUserView("Mousepad")]
 public class Mousepad : Product
 {
   // All sizes are in mm (milimeter)
@@ -54,7 +55,9 @@ public class Mousepad : Product
     Thickness = thickness;
   }
 
-  int GetSize()
+  public Mousepad(){}
+
+  public int GetSize()
   {
     return (int)Math.Round(Math.Sqrt(Math.Pow(length, 2) + Math.Pow(width, 2)));
   }

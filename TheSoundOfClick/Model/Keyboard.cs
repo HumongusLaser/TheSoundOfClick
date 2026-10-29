@@ -1,6 +1,7 @@
 ﻿namespace TheSoundOfClick
 {
   [ProductCategory("keyboard")]
+  [ProductCategoryUserView("Keyboard")]
   public class Keyboard : Product
   {
     private string layout = "";
@@ -34,7 +35,7 @@
       }
     }
 
-    public string Size { get; set; }
+    public string Size { get; set; } = "";
 
     public Keyboard(Guid id, int stock, string name, decimal price, string color, string layout, bool isWireless, string switchType, string description, string size, int netWeight, int grossWeight) : 
       base(id, stock, name, price, color, description, netWeight)
@@ -44,6 +45,7 @@
       SwitchType = switchType;
       Size = size;
     }
+    public Keyboard(){}
 
     public override string GetProductDetails()
     {
