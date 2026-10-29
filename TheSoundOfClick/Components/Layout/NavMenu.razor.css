@@ -1,106 +1,241 @@
-/* Øverste navigationsmenu */
-.top-row {
-    background-color: #ffffff;
-    min-height: 80px;
-    display: flex;
-    align-items: center;
+
+:root {
+    --gaming-dark: #080b16;
+    --gaming-blue: #00d9ff;
+    --gaming-purple: #923bff;
+    --gaming-white: #ffffff;
+    --gaming-muted: #b5b8cc;
 }
 
+/* Øverste informationsbjælke */
+
+.announcement-bar {
+    background: linear-gradient( 90deg, #063d66, #32206e, #651c91 );
+    color: white;
+    min-height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 8px 15px;
+    text-align: center;
+}
+
+.separator {
+    color: #00d9ff;
+    font-size: 1rem;
+}
+
+/* =====================================
+   NAVBAR
+===================================== */
+
+.gaming-header {
+    width: 100%;
+    background-color: #080b16;
+    border-bottom: 1px solid #26335c;
+    box-shadow: 0 4px 20px rgba(0, 217, 255, 0.08);
+}
+
+.navbar-container {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 40px;
+    min-height: 95px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+
+/* =====================================
+   LOGO
+===================================== */
+
+/* Logo */
+
 .navbar-brand {
-    color: #222222;
-    font-size: 1.5rem;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
     text-decoration: none;
 }
 
-/* Menuens placering */
-.nav-scrollable {
-    display: block;
-    width: 100%;
+/* Logoets størrelse */
+
+.navbar-logo {
+    width: 180px;
+    height: auto;
+    object-fit: contain;
+    transition: 0.3s ease;
 }
 
-    .nav-scrollable nav {
-        display: flex;
-        flex-direction: row !important;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
+    /* Effekt når musen er over logoet */
+
+    .navbar-logo:hover {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.5));
     }
 
-/* Menupunkter */
-.nav-item {
-    font-size: 0.95rem;
-    padding: 0;
+.navbar-brand:hover {
+    filter: drop-shadow( 0 0 8px rgba(0, 217, 255, 0.5) );
 }
 
-    .nav-item ::deep .nav-link {
-        color: #333333;
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
+/* =====================================
+   MENUPUNKTER
+===================================== */
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 35px;
+}
+
+    .navbar-links ::deep .nav-link {
+        color: #d5d7e5;
         text-decoration: none;
-        border-radius: 5px;
+        font-size: 1rem;
+        font-weight: 500;
+        padding: 10px 0;
+        position: relative;
+        transition: color 0.3s;
     }
 
-        .nav-item ::deep .nav-link:hover {
-            background-color: #f5f5f5;
-            color: #000000;
+        /* Hover */
+
+        .navbar-links ::deep .nav-link:hover {
+            color: #00d9ff;
         }
 
-    .nav-item ::deep a.active {
-        color: #000000;
-        font-weight: 600;
+        /* Streg under aktivt menupunkt */
+
+        .navbar-links ::deep .nav-link::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient( 90deg, #00d9ff, #923bff );
+            transition: width 0.3s;
+        }
+
+        .navbar-links ::deep .nav-link:hover::after,
+        .navbar-links ::deep .nav-link.active::after {
+            width: 100%;
+        }
+
+        .navbar-links ::deep .nav-link.active {
+            color: #00d9ff;
+        }
+
+/* =====================================
+   BRUGER OG INDKØBSKURV
+===================================== */
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+    .navbar-actions ::deep .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #d5d7e5;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: 0.3s;
     }
 
-/* Ikoner */
-.bi {
-    display: inline-block;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.5rem;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
+        .navbar-actions ::deep .nav-link:hover {
+            color: #00d9ff;
+        }
+
+        .navbar-actions ::deep .nav-link.active {
+            color: #00d9ff;
+        }
+
+    /* Ikoner */
+
+    .navbar-actions i {
+        font-size: 1.3rem;
+    }
+
+/* Indkøbskurv */
+
+.cart-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border: 1px solid #00d9ff;
+    border-radius: 8px;
+    color: #00d9ff;
+    font-size: 1.4rem;
+    text-decoration: none;
+    transition: 0.3s;
 }
 
-/* Home */
-.bi-house-door-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+    .cart-button:hover {
+        background: #00d9ff;
+        color: #080b16;
+        box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+    }
+
+/* =====================================
+   RESPONSIVE DESIGN
+===================================== */
+
+@media (max-width: 1100px) {
+
+    .navbar-container {
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .navbar-links {
+        gap: 15px;
+    }
+
+    .navbar-actions {
+        gap: 15px;
+    }
 }
 
-/* Produkter */
-.bi-bag-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a2 2 0 0 0-2 2v1H3.5a1 1 0 0 0-1 .9l-.8 9A1 1 0 0 0 2.7 15h10.6a1 1 0 0 0 1-.9l-.8-9a1 1 0 0 0-1-.9H10V3a2 2 0 0 0-2-2zm-1 2a1 1 0 0 1 2 0v1H7V3z'/%3E%3C/svg%3E");
-}
-
-/* Opret bruger */
-.bi-person-plus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM6 9a6 6 0 0 0-6 6 .5.5 0 0 0-.5.5h8.5a.5.5 0 0 0 0-1H1.03A5 5 0 0 1 6 10c.55 0 1.08.09 1.57.25a.5.5 0 1 0 .31-.95A6 6 0 0 0 6 9zm6-8a.5.5 0 0 1 .5.5V3H14a.5.5 0 0 1 0 1h-1.5v1.5a.5.5 0 0 1-1 0V4H10a.5.5 0 0 1 0-1h1.5V1.5A.5.5 0 0 1 12 1z'/%3E%3C/svg%3E");
-}
-
-/* Log ind */
-.bi-box-arrow-in-right {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M6.354 3.646a.5.5 0 0 1 0 .708L3.707 7H11.5a.5.5 0 0 0 0 1H3.707l2.647 2.646a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0z'/%3E%3Cpath d='M9 1.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 15 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
-}
-
-/* Counter */
-.bi-plus-square-fill-nav-menu {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333333' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
-}
-
-/* Skjul den gamle mobilknap indtil vi laver mobilmenuen */
-.navbar-toggler {
-    display: none;
-}
-
-/* Mindre skærme */
 @media (max-width: 768px) {
-    .nav-scrollable nav {
+
+    .announcement-bar {
+        font-size: 0.7rem;
+        gap: 8px;
         flex-wrap: wrap;
-        gap: 0.25rem;
     }
 
-    .nav-item ::deep .nav-link {
-        padding: 0.5rem;
+    .navbar-container {
+        flex-direction: column;
+        padding: 20px 15px;
+        gap: 20px;
+    }
+
+    .navbar-links {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .navbar-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .brand-sound {
+        font-size: 0.9rem;
+    }
+
+    .brand-click {
+        font-size: 1.7rem;
     }
 }

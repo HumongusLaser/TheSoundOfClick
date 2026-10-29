@@ -1,0 +1,93 @@
+﻿/* =====================================
+   THE SOUND OF CLICK - FOOTER
+===================================== */
+
+.gaming-footer {
+    background: linear-gradient( 135deg, #080b16, #11152b );
+    border-top: 1px solid #26335c;
+    padding: 70px 40px 20px;
+    color: #b5b8cc;
+}
+
+/* Kolonner */
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 50px;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding-bottom: 50px;
+}
+
+/* Overskrifter */
+
+.footer-column h3 {
+    color: #00d9ff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+/* Beskrivelse */
+
+.footer-column p {
+    color: #b5b8cc;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    max-width: 300px;
+}
+
+/* Links */
+
+.footer-column a {
+    display: block;
+    color: #b5b8cc;
+    text-decoration: none;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    transition: 0.3s;
+}
+
+    /* Hover */
+
+    .footer-column a:hover {
+        color: #00d9ff;
+        transform: translateX(5px);
+    }
+
+/* Nederste del */
+
+.footer-bottom {
+    border-top: 1px solid #26335c;
+    text-align: center;
+    padding-top: 25px;
+}
+
+    .footer-bottom p {
+        color: #777d99;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+/* Tablet */
+
+@media (max-width: 992px) {
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+    }
+}
+
+/* Mobil */
+
+@media (max-width: 576px) {
+    .gaming-footer {
+        padding: 50px 20px 20px;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}
