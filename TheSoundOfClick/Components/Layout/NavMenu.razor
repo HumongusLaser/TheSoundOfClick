@@ -1,41 +1,77 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">The Sound Of Click</a>
-    </div>
+﻿@* Øverste informationsbjælke *@
+<div class="announcement-bar">
+    <span>🚚 2-4 dages levering</span>
+    <span class="separator">✦</span>
+    <span>Gratis fragt ved køb over 500 kr.</span>
+    <span class="separator">✦</span>
+    <span>Dansk webshop</span>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@* Navigation *@
+<header class="gaming-header">
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    <div class="navbar-container">
 
-        <div class="nav-item px-3">
+        @* Logo - klik for at gå til forsiden *@
+        <a class="navbar-brand" href="/">
+            <img src="/images/logo.png"
+                 alt="The Sound Of Click"
+                 class="navbar-logo" />
+        </a>
+
+       <nav class="navbar-links">
+
+    <NavLink class="nav-link"
+             href=""
+             Match="NavLinkMatch.All">
+        Home
+    </NavLink>
+
+    <NavLink class="nav-link" href="keyboards">
+        Tastaturer
+    </NavLink>
+
+    <NavLink class="nav-link" href="mice">
+        Mus
+    </NavLink>
+
+    <NavLink class="nav-link" href="mousepads">
+        Musemåtter
+    </NavLink>
+
+    @* Kun medarbejdere og admins *@
+    <AuthorizeView Roles="Employee,Admin">
+        <Authorized>
             <NavLink class="nav-link" href="products">
-                <span class="bi bi-bag-fill-nav-menu" aria-hidden="true"></span> Produkter
+                Administrer produkter
             </NavLink>
+        </Authorized>
+    </AuthorizeView>
+
+</nav>
+
+        @* Bruger og indkøbskurv *@
+        <div class="navbar-actions">
+
+            <NavLink class="nav-link" href="register"
+                     title="Opret bruger">
+                <i class="bi bi-person-plus"></i>
+                <span>Opret bruger</span>
+            </NavLink>
+
+            <NavLink class="nav-link" href="login"
+                     title="Log ind">
+                <i class="bi bi-person-circle"></i>
+                <span>Log ind</span>
+            </NavLink>
+
+            <a class="cart-button" href="cart"
+               title="Indkøbskurv">
+                <i class="bi bi-bag"></i>
+            </a>
+
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="register">
-                <span class="bi bi-person-plus" aria-hidden="true"></span> Register
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="login">
-                <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Log ind
-            </NavLink>
-        </div>
-    </nav>
-</div>
+</header>
