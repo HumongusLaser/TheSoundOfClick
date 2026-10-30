@@ -306,14 +306,15 @@
         @* string extraData = json.ToJsonString(); *@
 
         @* Product product = ProductFactory.Create(ProductFactory.GetCategory(typeof(Keyboard)), extraData);*@
-        product!.Name = productName;
-        product.Color = productColor;
-        product.NetWeight = productNetWeight;
-        product.Price = productPrice;
-        product.Stock = productStock;
-
+        
         if (product != null)
         {
+            product.Name = productName;
+            product.Color = productColor;
+            product.NetWeight = productNetWeight;
+            product.Price = productPrice;
+            product.Stock = productStock;
+
             await ProductRepo.CreateAsync(product);
         }
     }
