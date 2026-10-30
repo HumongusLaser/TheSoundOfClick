@@ -17,14 +17,24 @@ public static class ProductFactory
     return (Product)JsonSerializer.Deserialize(detailsJson, type)!;
   }
 
+  public static Product? CreateFromProductCategoryUserView(string category)
+  {
+    Type? type = ProductNameHelper.GetTypeFromCategoryUserView(category);
+    if (type == null)
+    {
+      return null;
+    }
+    return (Product?)Activator.CreateInstance(type);
+  }
+
   public static string GetCategory(Product product)
   {
     return product.GetType().GetCustomAttribute<ProductCategoryAttribute>()!.Name;
   }
 
-  public static string GetCategory(Type product)
+  public static string? GetCategory(Type product)
   {
-    return product.GetCustomAttribute<ProductCategoryAttribute>()!.Name;
+    return product.GetCustomAttribute<ProductCategoryAttribute>()?.Name;
   }
 
 

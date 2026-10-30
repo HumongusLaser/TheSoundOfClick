@@ -2,16 +2,30 @@
 
 namespace TheSoundOfClick;
 
-public static class ProductHelper
-{
-  public static readonly Dictionary<string, Type> SubClassesUserName = [];
-  public static readonly Dictionary<string, Type> SubClasses = [];
+public record CachedProductName
+(
+  string Name,
+  string? Category,
+  string? CategoryUserView
+);
 
-  static ProductHelper()
+
+public static class ProductNameHelper
+{
+  public static readonly Dictionary<Type, CachedProductName> SubClassesUserName = [];
+
+  static ProductNameHelper()
   {
-    IEnumerable<Type> productTypes = typeof(Product).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Product)) && !t.IsAbstract);
-    SubClassesUserName = productTypes.ToDictionary(t => GetProductCategoryUserView(t) ?? t.Name, t => t);
-    SubClasses = productTypes.ToDictionary(t => t.Name, t => t);
+    SubClassesUserName = typeof(Product).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Product)) && !t.IsAbstract).
+    ToDictionary(t => t, t =>
+    {
+      return new CachedProductName
+      (
+        Name: t.Name, 
+        Category: ProductFactory.GetCategory(t),
+        CategoryUserView: GetProductCategoryUserView(t)
+      );
+    });
   }
 
   private static string? GetProductCategoryUserView(Type type)
@@ -21,6 +35,26 @@ public static class ProductHelper
 
   public static Type? GetTypeFromCategoryUserView(string name)
   {
-    return SubClassesUserName.GetValueOrDefault(name);
+    return SubClassesUserName.FirstOrDefault(kvp => kvp.Value.CategoryUserView == name).Key;
+  }
+
+  public static CachedProperty[]? GetPropertiesFromCategoryUserView(string name)
+  {
+    Type? type = SubClassesUserName.FirstOrDefault(kvp => kvp.Value.CategoryUserView == name).Key;
+    if (type == null)
+    {
+      return null;
+    }
+    return PropertyNameHelper.GetPropertiesWithMetaData(type);
+  }
+
+  public static CachedProperty[]? GetPropertiesFromTypeName(string name)
+  {
+    Type? type = SubClassesUserName.FirstOrDefault(kvp => kvp.Value.Name == name).Key;
+    if (type == null)
+    {
+      return null;
+    }
+    return PropertyNameHelper.GetPropertiesWithMetaData(type);
   }
 }
