@@ -69,10 +69,23 @@
             case nameof(product.Name) or nameof(product.Color) or nameof(product.ID) or nameof(product.Description) or nameof(product.NetWeight) or nameof(product.Price) or nameof(product.Stock):
                 break;
             default:
-                <div class="mb-3">
-                    <label class="form-label">@GetPropertyName(property)</label>
-                    <input class="form-control" @bind:get="property.Property.GetValue(product)?.ToString()" @bind:set="v => SetProperty(product!, property.Property, v)" />
-                </div>
+                if (property.Property.PropertyType == typeof(bool))
+                {
+                    <div class="mb-3">
+                        <label class="form-label">@GetPropertyName(property)</label>
+                        <select class="form-select" value="@(property.Property.GetValue(product)?.ToString() ?? "")" @onchange="v => SetProperty(product!, property.Property, v.Value?.ToString())">
+                            <option selected value="True">Ja</option>
+                            <option value="False">Nej</option>
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <label class="form-label">@GetPropertyName(property)</label>
+                        <input class="form-control" @bind:get="property.Property.GetValue(product)?.ToString()" @bind:set="v => SetProperty(product!, property.Property, v)" />
+                    </div>
+                }
                 break;
         }
     }
@@ -314,6 +327,7 @@
             product.NetWeight = productNetWeight;
             product.Price = productPrice;
             product.Stock = productStock;
+            product.Description = productDescription;
 
             await ProductRepo.CreateAsync(product);
         }
