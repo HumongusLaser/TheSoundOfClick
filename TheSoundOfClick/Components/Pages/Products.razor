@@ -2,7 +2,9 @@
 @rendermode InteractiveServer
 @inject ProductService ProductService
 @using Microsoft.AspNetCore.RateLimiting
+@* @using Microsoft.AspNetCore.Authorization *@
 @attribute [EnableRateLimiting("products")]
+@* @attribute [Authorize(Roles = "Employee,Admin")] *@
 
 <h3>Produkter</h3>
 

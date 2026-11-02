@@ -1,0 +1,72 @@
+﻿.hero-section {
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    padding: 80px 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Indhold */
+
+.hero-content {
+    max-width: 800px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+    /* Overskrift */
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        margin-bottom: 25px;
+    }
+
+    /* Beskrivelse */
+
+    .hero-content p {
+        font-size: 1.2rem;
+        color: #b5b8cc;
+        line-height: 1.7;
+        margin-bottom: 35px;
+    }
+
+/* Knap */
+
+.hero-button {
+    display: inline-block;
+    padding: 15px 35px;
+    background: linear-gradient( 90deg, #00d9ff, #923bff );
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+    /* Hover-effekt */
+
+    .hero-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 25px rgba(0, 217, 255, 0.4);
+        color: white;
+    }
+
+/* Mobil */
+
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 400px;
+        padding: 60px 20px;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+}

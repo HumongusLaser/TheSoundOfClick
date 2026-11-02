@@ -1,0 +1,110 @@
+﻿/* Hele sektionen */
+
+.benefits-section {
+    text-align: center;
+}
+
+    /* Overskrift */
+
+    .benefits-section h2 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+    }
+
+.benefits-description {
+    color: #b5b8cc;
+    margin-bottom: 45px;
+    font-size: 1.1rem;
+}
+
+.benefits-title {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+/* Placering af kort */
+
+.benefits-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* Hvert kort */
+
+.benefit-card {
+    text-align: center;
+    padding: 25px 15px;
+    transition: 0.3s;
+}
+
+    /* Ikoner */
+
+    .benefit-card i {
+        font-size: 2.8rem;
+        color: #00d9ff;
+        display: block;
+        margin-bottom: 20px;
+        transition: 0.3s;
+    }
+
+    /* Overskrifter */
+
+    .benefit-card h3 {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    /* Beskrivelser */
+
+    .benefit-card p {
+        color: #b5b8cc;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    /* Hover-effekt */
+
+    .benefit-card:hover {
+        transform: translateY(-5px);
+    }
+
+        .benefit-card:hover i {
+            color: #923bff;
+            filter: drop-shadow(0 0 10px rgba(146, 59, 255, 0.5));
+        }
+
+/* Tablets */
+
+@media (max-width: 992px) {
+    .benefits-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobil */
+
+@media (max-width: 576px) {
+    .benefits-container {
+        grid-template-columns: 1fr;
+    }
+
+    .benefits-section {
+        padding: 40px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .benefits-title {
+        font-size: 2rem;
+    }
+}

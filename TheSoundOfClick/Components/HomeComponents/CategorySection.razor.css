@@ -1,0 +1,87 @@
+﻿/* Kategori sektion */
+
+.category-section {
+    text-align: center;
+}
+
+    .category-section h2 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+    }
+
+.category-description {
+    color: #b5b8cc;
+    margin-bottom: 45px;
+    font-size: 1.1rem;
+}
+
+/* Kategorier */
+
+.category-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Kort */
+
+.category-card {
+    background: transparent;
+    border: 1px solid #29365a;
+    border-radius: 15px;
+    padding: 50px 25px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+    /* Ikoner */
+
+    .category-card i {
+        font-size: 3.5rem;
+        color: #00d9ff;
+        display: block;
+        margin-bottom: 25px;
+    }
+
+    /* Tekst */
+
+    .category-card h3 {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .category-card p {
+        color: #b5b8cc;
+        margin-bottom: 25px;
+    }
+
+    .category-card span {
+        color: #00d9ff;
+        font-weight: 600;
+    }
+
+    /* Hover */
+
+    .category-card:hover {
+        transform: translateY(-8px);
+        border-color: #00d9ff;
+        box-shadow: 0 0 25px rgba(0, 217, 255, 0.2);
+    }
+
+        .category-card:hover i {
+            color: #923bff;
+        }
+
+/* Mobil */
+
+@media (max-width: 768px) {
+    .category-container {
+        grid-template-columns: 1fr;
+    }
+}
