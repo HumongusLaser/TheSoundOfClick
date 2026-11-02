@@ -1,0 +1,20 @@
+﻿<div class="benefit-card">
+
+    <i class="@Icon"></i>
+
+    <h3>@Title</h3>
+
+    <p>@Description</p>
+
+</div>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = "";
+
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string Description { get; set; } = "";
+}

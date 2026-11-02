@@ -1,76 +1,164 @@
 ﻿@page "/register"
 @rendermode InteractiveServer
+@using TheSoundOfClick.Components.AuthComponents
 
-<h1>Opret bruger</h1>
+<div class="auth-page">
 
-<p>Opret en konto</p>
+<AuthCard Title="Opret din konto"
+          Description="Bliv en del af The Sound Of Click"
+          Wide="true">
 
-<label>Fornavn</label>
-<input type="text" @bind="FirstName" />
+        <div class="auth-form">
 
-<br />
+            <h3 class="auth-section-title">Personlige oplysninger</h3>
 
-<label>Efternavn</label>
-<input type="text" @bind="LastName" />
+            <div class="auth-row">
 
-<br />
-    
-<label>Email</label>
-<input type="email" @bind="Email" />
+                <div class="auth-field">
+                    <label for="firstName">Fornavn</label>
+                    <input id="firstName"
+                           type="text"
+                           placeholder="Fornavn"
+                           autocomplete="given-name"
+                           @bind="FirstName" />
+                </div>
 
-<br />
+                <div class="auth-field">
+                    <label for="lastName">Efternavn</label>
+                    <input id="lastName"
+                           type="text"
+                           placeholder="Efternavn"
+                           autocomplete="family-name"
+                           @bind="LastName" />
+                </div>
 
-<label>Vejnavn og husnummer</label>
-<input type="text" @bind="StreetAddress" />
+            </div>
 
-<br />
+            <div class="auth-field">
+                <label for="email">Emailadresse</label>
+                <input id="email"
+                       type="email"
+                       placeholder="Indtast din emailadresse"
+                       autocomplete="email"
+                       @bind="Email" />
+            </div>
 
-<label>Etage og dør (valgfrit)</label>
-<input type="text" @bind="Apartment" />
+            <h3 class="auth-section-title">Adresse</h3>
 
-<br />
+            <div class="auth-field">
+                <label for="street">Vejnavn og husnummer</label>
+                <input id="street"
+                       type="text"
+                       placeholder="Eksempel: Hovedgaden 12"
+                       autocomplete="street-address"
+                       @bind="StreetAddress" />
+            </div>
 
-<label>Postnummer</label>
-<input type="text" @bind="PostalCode" maxlength="4" />
+            <div class="auth-field">
+                <label for="apartment">Etage og dør (valgfrit)</label>
+                <input id="apartment"
+                       type="text"
+                       placeholder="Eksempel: 2. th."
+                       @bind="Apartment" />
+            </div>
 
-<br />
+            <div class="auth-row">
 
-<label>By</label>
-<input type="text" @bind="City" />
+                <div class="auth-field">
+                    <label for="postalCode">Postnummer</label>
+                    <input id="postalCode"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="4"
+                           placeholder="1234"
+                           autocomplete="postal-code"
+                           @bind="PostalCode" />
+                </div>
 
-<br />
+                <div class="auth-field">
+                    <label for="city">By</label>
+                    <input id="city"
+                           type="text"
+                           placeholder="By"
+                           autocomplete="address-level2"
+                           @bind="City" />
+                </div>
 
-<label>Telefonnummer</label>
-<span>+45 </span>
-<input type="tel" @bind="PhoneNumber" maxlength="8" />     
+            </div>
 
-<br />
+            <div class="auth-field">
+                <label for="phone">Telefonnummer</label>
 
-<label>Password</label>
+                <div class="auth-phone">
+                    <span>+45</span>
 
-<p class="text-muted small mb-2">
-    Vælg et unikt password, som du ikke bruger andre steder.
-    <br />
-    Dit password skal indeholde:
-    <br />
-    • Mindst 16 tegn
-    <br />
-    • Mindst 2 store bogstaver
-    <br />
-    • Mindst 2 tal
-    <br />
-    • Mindst 2 specialtegn (fx !, # eller ?)
-</p>
+                    <input id="phone"
+                           type="tel"
+                           inputmode="numeric"
+                           maxlength="8"
+                           placeholder="12345678"
+                           autocomplete="tel-national"
+                           @bind="PhoneNumber" />
+                </div>
+            </div>
 
-<input type="password" @bind="Password" />
+            <!-- Adgangskode -->
+            <h3 class="auth-section-title">Sikkerhed</h3>
 
-<label>Gentag password</label>
-<input type="password" @bind="ConfirmPassword" />
+            <div class="auth-field">
+                <label for="password">Adgangskode</label>
 
-<br />
+                <div class="auth-password-requirements">
+                    <p>Din adgangskode skal indeholde:</p>
+                    <ul>
+                        <li>Mindst 16 tegn</li>
+                        <li>Mindst 2 store bogstaver</li>
+                        <li>Mindst 2 tal</li>
+                        <li>Mindst 2 specialtegn</li>
+                    </ul>
+                </div>
 
-<button @onclick="RegisterUser">Opret bruger</button>
-<p>@Message</p>
+                <input id="password"
+                       type="password"
+                       placeholder="Opret en adgangskode"
+                       autocomplete="new-password"
+                       @bind="Password" />
+            </div>
+
+            <div class="auth-field">
+                <label for="confirmPassword">Gentag adgangskode</label>
+                <input id="confirmPassword"
+                       type="password"
+                       placeholder="Gentag din adgangskode"
+                       autocomplete="new-password"
+                       @bind="ConfirmPassword" />
+            </div>
+
+            <button type="button"
+                    class="auth-button"
+                    @onclick="RegisterUser">
+                Opret konto
+            </button>
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="auth-message" role="status">
+                    @Message
+                </p>
+            }
+
+            <div class="auth-footer">
+                <p>
+                    Har du allerede en konto?
+                    <a href="/login">Log ind</a>
+                </p>
+            </div>
+
+        </div>
+
+    </AuthCard>
+
+</div>
 
 @code {
     private string FirstName = "";

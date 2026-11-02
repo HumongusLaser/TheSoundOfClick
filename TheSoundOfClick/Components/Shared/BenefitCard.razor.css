@@ -1,0 +1,45 @@
+﻿/* Kort */
+
+.benefit-card {
+    text-align: center;
+    padding: 25px 15px;
+    transition: var(--transition-speed);
+}
+
+    /* Ikoner */
+
+    .benefit-card i {
+        font-size: 2.8rem;
+        color: var(--color-primary);
+        display: block;
+        margin-bottom: 20px;
+        transition: var(--transition-speed);
+    }
+
+    /* Overskrifter */
+
+    .benefit-card h3 {
+        color: var(--color-text);
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    /* Beskrivelser */
+
+    .benefit-card p {
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    /* Hover-effekt */
+
+    .benefit-card:hover {
+        transform: translateY(-5px);
+    }
+
+        .benefit-card:hover i {
+            color: var(--color-secondary);
+            filter: drop-shadow(0 0 10px rgba(146, 59, 255, 0.5));
+        }
