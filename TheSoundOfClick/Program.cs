@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TheSoundOfClick.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Argon2Sharp;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(
@@ -59,6 +60,7 @@ using (JsonDocument secretJson = JsonDocument.Parse(secretFile))
 }
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+builder.Services.AddSingleton(Argon2Parameters.CreateHighSecurity());
 builder.Services.AddScoped<DiscountRepository>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<UserLoginRepository>();
