@@ -3,6 +3,7 @@
 
 @using Microsoft.AspNetCore.Authorization
 
+
 @* @attribute [Authorize(Roles = "Admin")] *@
 
 <PageTitle>Administrer admins</PageTitle>
@@ -20,6 +21,7 @@
         ← Tilbage
     </NavLink>
 
+ 
     <section class="employee-form-section">
 
         <h3>Alle administratorer</h3>
@@ -72,7 +74,6 @@
 
     </section>
 
-
     @if (EditingUser is not null)
     {
         <div class="employee-modal-overlay">
@@ -88,28 +89,24 @@
                     Her kan du ændre brugerens oplysninger.
                 </p>
 
-
                 <h3>Personlige oplysninger</h3>
 
                 <div class="row g-3 mt-2">
 
                     <div class="col-md-6">
                         <label class="form-label">Fornavn</label>
-
                         <input class="form-control"
                                @bind="EditingUser.FirstName" />
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Efternavn</label>
-
                         <input class="form-control"
                                @bind="EditingUser.LastName" />
                     </div>
 
                     <div class="col-12">
                         <label class="form-label">E-mail</label>
-
                         <input type="email"
                                class="form-control"
                                @bind="EditingUser.Email" />
@@ -117,21 +114,18 @@
 
                     <div class="col-md-8">
                         <label class="form-label">Adresse</label>
-
                         <input class="form-control"
                                @bind="EditingUser.StreetAddress" />
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Lejlighed (valgfrit)</label>
-
                         <input class="form-control"
                                @bind="EditingUser.Apartment" />
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Postnummer</label>
-
                         <input class="form-control"
                                maxlength="4"
                                @bind="EditingUser.PostalCode" />
@@ -139,14 +133,12 @@
 
                     <div class="col-md-8">
                         <label class="form-label">By</label>
-
                         <input class="form-control"
                                @bind="EditingUser.City" />
                     </div>
 
                     <div class="col-12">
                         <label class="form-label">Telefonnummer</label>
-
                         <input type="tel"
                                class="form-control"
                                maxlength="8"
@@ -165,10 +157,8 @@
 
                     <select class="form-select"
                             @bind="EditingUser.Role">
-
                         <option value="Admin">Admin</option>
                         <option value="Employee">Employee</option>
-
                     </select>
 
                 </div>
@@ -200,7 +190,6 @@
 
         </div>
     }
-
 
     @if (DeletingUser is not null)
     {
@@ -251,8 +240,7 @@
 
     @if (!string.IsNullOrEmpty(Message))
     {
-        <p class="employee-form-message"
-           role="status">
+        <p class="employee-form-message" role="status">
             @Message
         </p>
     }
@@ -296,6 +284,7 @@
     private string EditError = "";
 
     private AdminTestUser? EditingUser;
+    private AdminTestUser? DeletingUser;
 
 
     private void EditUser(AdminTestUser user)
@@ -321,7 +310,6 @@
             Role = user.Role
         };
     }
-
 
     private void SaveChanges()
     {
@@ -356,7 +344,6 @@
             return;
         }
 
-       
         var originalUser = Admins.FirstOrDefault(
             u => u.Id == EditingUser.Id
         );
@@ -383,16 +370,12 @@
 
         Message = "Brugerens oplysninger er opdateret midlertidigt.";
     }
-
     private void CancelEdit()
     {
         EditingUser = null;
         EditError = "";
         Message = "";
     }
-
-
-    private AdminTestUser? DeletingUser;
 
     private void DeleteUser(AdminTestUser user)
     {
@@ -414,19 +397,17 @@
         Message = $"{name} er fjernet fra testlisten.";
     }
 
+
     private void CancelDelete()
     {
         DeletingUser = null;
     }
 
-
-    // Midlertidig SLET!!!!
     private class AdminTestUser
     {
         public string Id { get; set; } = "";
 
-        public DateOnly RegisterDate { get; set; }
-            = DateOnly.FromDateTime(DateTime.Today);
+        public DateOnly RegisterDate { get; set; }  = DateOnly.FromDateTime(DateTime.Today);
 
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";

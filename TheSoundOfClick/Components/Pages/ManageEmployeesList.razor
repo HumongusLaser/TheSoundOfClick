@@ -1,5 +1,451 @@
-﻿<h3>ManageEmployeesList</h3>
+﻿@page "/manage-employees/employees"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+
+@* @attribute [Authorize(Roles = "Admin")] *@
+
+<PageTitle>Administrer medarbejdere</PageTitle>
+
+<div class="page-content">
+
+    <h1>Administrer medarbejdere</h1>
+
+    <p class="page-description">
+        Her kan du se og administrere alle medarbejdere.
+    </p>
+
+    <NavLink class="page-button-outline mb-4"
+             href="/manage-employees">
+        ← Tilbage
+    </NavLink>
+
+    <section class="employee-form-section">
+
+        <h3>Alle medarbejdere</h3>
+
+        <div class="table-responsive">
+
+            <table class="table admin-table">
+
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fornavn</th>
+                        <th>Efternavn</th>
+                        <th>Rolle</th>
+                        <th>Handlinger</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var user in Employees.Where(u => u.Role == "Employee"))
+                    {
+                        <tr>
+                            <td>@user.Id</td>
+                            <td>@user.FirstName</td>
+                            <td>@user.LastName</td>
+                            <td>@user.Role</td>
+
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-info me-2"
+                                        title="Rediger bruger"
+                                        @onclick="() => EditUser(user)">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        title="Slet bruger"
+                                        @onclick="() => DeleteUser(user)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    @if (EditingUser is not null)
+    {
+        <div class="employee-modal-overlay">
+
+            <div class="employee-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-label="Rediger medarbejder">
+
+                <h2>Rediger medarbejder</h2>
+
+                <p class="page-description">
+                    Her kan du ændre medarbejderens oplysninger.
+                </p>
+
+                <h3>Personlige oplysninger</h3>
+
+                <div class="row g-3 mt-2">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Fornavn</label>
+
+                        <input class="form-control"
+                               @bind="EditingUser.FirstName" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Efternavn</label>
+
+                        <input class="form-control"
+                               @bind="EditingUser.LastName" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">E-mail</label>
+
+                        <input type="email"
+                               class="form-control"
+                               @bind="EditingUser.Email" />
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label">Adresse</label>
+
+                        <input class="form-control"
+                               @bind="EditingUser.StreetAddress" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Lejlighed (valgfrit)</label>
+
+                        <input class="form-control"
+                               @bind="EditingUser.Apartment" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Postnummer</label>
+
+                        <input class="form-control"
+                               maxlength="4"
+                               @bind="EditingUser.PostalCode" />
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label">By</label>
+
+                        <input class="form-control"
+                               @bind="EditingUser.City" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Telefonnummer</label>
+
+                        <input type="tel"
+                               class="form-control"
+                               maxlength="8"
+                               @bind="EditingUser.PhoneNumber" />
+                    </div>
+
+                </div>
+
+                <hr class="my-4" />
+
+                <h3>Brugerrolle</h3>
+
+                <div class="mb-4 mt-3">
+
+                    <label class="form-label">Rolle</label>
+
+                    <select class="form-select"
+                            @bind="EditingUser.Role">
+
+                        <option value="Employee">Employee</option>
+                        <option value="Admin">Admin</option>
+
+                    </select>
+
+                </div>
+
+                @if (!string.IsNullOrEmpty(EditError))
+                {
+                    <p class="text-danger" role="alert">
+                        @EditError
+                    </p>
+                }
+
+                <div class="d-flex flex-wrap gap-3 mt-4">
+
+                    <button type="button"
+                            class="page-button"
+                            @onclick="SaveChanges">
+                        Gem ændringer
+                    </button>
+
+                    <button type="button"
+                            class="page-button-outline"
+                            @onclick="CancelEdit">
+                        Annuller
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+    @if (DeletingUser is not null)
+    {
+        <div class="employee-modal-overlay">
+
+            <div class="employee-modal employee-delete-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-label="Bekræft sletning">
+
+                <div class="employee-delete-icon">
+                    <i class="bi bi-trash3"></i>
+                </div>
+
+                <h2>Slet medarbejder</h2>
+
+                <p class="employee-delete-description">
+                    Er du sikker på, at du vil slette
+                    <strong>
+                        @DeletingUser.FirstName @DeletingUser.LastName
+                    </strong>?
+                </p>
+
+                <p class="employee-delete-warning">
+                    Denne handling kan ikke fortrydes.
+                </p>
+
+                <div class="employee-delete-actions">
+
+                    <button type="button"
+                            class="page-button-outline"
+                            @onclick="CancelDelete">
+                        Annuller
+                    </button>
+
+                    <button type="button"
+                            class="employee-delete-button"
+                            @onclick="ConfirmDelete">
+                        Ja, slet bruger
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <p class="employee-form-message"
+           role="status">
+            @Message
+        </p>
+    }
+
+</div>
 
 @code {
 
+    private List<EmployeeTestUser> Employees = new()
+    {
+        new EmployeeTestUser
+        {
+            Id = "2001",
+            FirstName = "Anders",
+            LastName = "Nielsen",
+            Email = "anders@example.com",
+            StreetAddress = "Hovedgaden 15",
+            Apartment = "",
+            PostalCode = "3600",
+            City = "Frederikssund",
+            PhoneNumber = "12345678",
+            Role = "Employee"
+        },
+
+        new EmployeeTestUser
+        {
+            Id = "2002",
+            FirstName = "Sofie",
+            LastName = "Larsen",
+            Email = "sofie@example.com",
+            StreetAddress = "Stationsvej 8",
+            Apartment = "1. th.",
+            PostalCode = "3400",
+            City = "Hillerød",
+            PhoneNumber = "87654321",
+            Role = "Employee"
+        },
+
+        new EmployeeTestUser
+        {
+            Id = "2003",
+            FirstName = "Martin",
+            LastName = "Petersen",
+            Email = "martin@example.com",
+            StreetAddress = "Skovvej 22",
+            Apartment = "",
+            PostalCode = "2750",
+            City = "Ballerup",
+            PhoneNumber = "11223344",
+            Role = "Employee"
+        }
+    };
+
+    private string Message = "";
+    private string EditError = "";
+
+    private EmployeeTestUser? EditingUser;
+
+    private void EditUser(EmployeeTestUser user)
+    {
+        Message = "";
+        EditError = "";
+
+        EditingUser = new EmployeeTestUser
+        {
+            Id = user.Id,
+            RegisterDate = user.RegisterDate,
+
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+
+            StreetAddress = user.StreetAddress,
+            Apartment = user.Apartment,
+            PostalCode = user.PostalCode,
+            City = user.City,
+            PhoneNumber = user.PhoneNumber,
+
+            Role = user.Role
+        };
+    }
+
+    private void SaveChanges()
+    {
+        if (EditingUser is null)
+            return;
+
+        EditError = "";
+
+        if (string.IsNullOrWhiteSpace(EditingUser.FirstName) ||
+            string.IsNullOrWhiteSpace(EditingUser.LastName) ||
+            string.IsNullOrWhiteSpace(EditingUser.Email) ||
+            string.IsNullOrWhiteSpace(EditingUser.StreetAddress) ||
+            string.IsNullOrWhiteSpace(EditingUser.PostalCode) ||
+            string.IsNullOrWhiteSpace(EditingUser.City) ||
+            string.IsNullOrWhiteSpace(EditingUser.PhoneNumber))
+        {
+            EditError = "Alle obligatoriske felter skal udfyldes.";
+            return;
+        }
+
+        if (EditingUser.PostalCode.Length != 4 ||
+            !EditingUser.PostalCode.All(char.IsDigit))
+        {
+            EditError = "Postnummer skal bestå af 4 cifre.";
+            return;
+        }
+
+        if (EditingUser.PhoneNumber.Length != 8 ||
+            !EditingUser.PhoneNumber.All(char.IsDigit))
+        {
+            EditError = "Telefonnummer skal bestå af 8 cifre.";
+            return;
+        }
+
+        var originalUser = Employees.FirstOrDefault(
+            u => u.Id == EditingUser.Id
+        );
+
+        if (originalUser is null)
+        {
+            EditError = "Medarbejderen blev ikke fundet.";
+            return;
+        }
+
+        originalUser.FirstName = EditingUser.FirstName;
+        originalUser.LastName = EditingUser.LastName;
+        originalUser.Email = EditingUser.Email;
+
+        originalUser.StreetAddress = EditingUser.StreetAddress;
+        originalUser.Apartment = EditingUser.Apartment;
+        originalUser.PostalCode = EditingUser.PostalCode;
+        originalUser.City = EditingUser.City;
+        originalUser.PhoneNumber = EditingUser.PhoneNumber;
+
+        originalUser.Role = EditingUser.Role;
+
+        EditingUser = null;
+
+        Message = "Medarbejderens oplysninger er opdateret midlertidigt.";
+    }
+
+    private void CancelEdit()
+    {
+        EditingUser = null;
+        EditError = "";
+        Message = "";
+    }
+
+
+    private EmployeeTestUser? DeletingUser;
+
+    private void DeleteUser(EmployeeTestUser user)
+    {
+        Message = "";
+        DeletingUser = user;
+    }
+
+    private void ConfirmDelete()
+    {
+        if (DeletingUser is null)
+            return;
+
+        string name = $"{DeletingUser.FirstName} {DeletingUser.LastName}";
+
+        Employees.Remove(DeletingUser);
+
+        DeletingUser = null;
+
+        Message = $"{name} er fjernet fra testlisten.";
+    }
+
+    private void CancelDelete()
+    {
+        DeletingUser = null;
+    }
+
+    private class EmployeeTestUser
+    {
+        public string Id { get; set; } = "";
+
+        public DateOnly RegisterDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+
+        public string Email { get; set; } = "";
+
+        public string StreetAddress { get; set; } = "";
+        public string Apartment { get; set; } = "";
+
+        public string PostalCode { get; set; } = "";
+        public string City { get; set; } = "";
+
+        public string PhoneNumber { get; set; } = "";
+
+        public string Role { get; set; } = "Employee";
+    }
 }

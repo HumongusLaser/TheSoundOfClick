@@ -3,76 +3,182 @@
 @rendermode InteractiveServer
 @inject ProductService ProductService
 
-<h3>Produktdetaljer</h3>
+<PageTitle>Produktdetaljer | The Sound Of Click</PageTitle>
 
-@if (product != null)
-{
-    <div class="card">
-        <div class="card-body">
-            <h4>@product.Name</h4>
-            <p>@product.Description</p>
-            @foreach (CachedProperty propCached in PropertyNameHelper.GetPropertiesWithMetaData(product.GetType()))
-            {
-                switch (propCached.Property.Name)
-                {
-                    case nameof(product.Name) or nameof(product.Description) or nameof(product.ID):
-                        break;
-                        
-                    default:
-                        <p><strong>@GetUserProperyName(propCached)</strong> @propCached.Property.GetValue(product)</p>
-                        break;
-                }
-            }
-            @* 
+<div class="page-content">
 
-            <p><strong>Pris:</strong> @product.Price.ToString("0.00") kr.</p>
+    @if (product != null)
+    {
+        <div class="product-details-container">
 
-            <p><strong>Farve:</strong> @product.Color</p>
+            <!-- Tilbageknap -->
+            <button type="button"
+                    class="page-button-outline mb-4"
+                    @onclick="GoBack">
+                ← Tilbage
+            </button>
 
-            <p><strong>På lager:</strong> @product.Stock</p>
+            <div class="row g-5">
 
-            @if (product is Keyboard keyboard)
-            {
-                <p><strong>Layout:</strong> @keyboard.Layout</p>
+                <!-- VENSTRE SIDE: PRODUKTBILLEDE -->
+                <div class="col-12 col-lg-6">
 
-                <p><strong>Switch-type:</strong> @keyboard.SwitchType</p>
+                    <div class="product-details-image">
 
-                <p><strong>Størrelse:</strong> @keyboard.Size</p>
+                        <div class="product-image-placeholder">
+                            <i class="bi bi-image"></i>
+                            <p>Produktbillede kommer snart</p>
+                        </div>
 
-                <p>
-                    <strong>Trådløst:</strong>
-                    @(keyboard.IsWireless ? "Ja" : "Nej")
+                    </div>
+
+                </div>
+
+                <!-- HØJRE SIDE: PRODUKTINFORMATION -->
+                <div class="col-12 col-lg-6">
+
+                    <div class="product-details-info">
+
+                        <h1>@product.Name</h1>
+
+                        <p class="product-details-description">
+                            @product.Description
+                        </p>
+
+                        <div class="product-details-price">
+                            @product.Price.ToString("N2") kr.
+                        </div>
+
+                        <!-- Lagerstatus -->
+                        <div class="product-stock-status">
+
+                            @if (product.Stock > 0)
+                            {
+                                <span class="in-stock">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    På lager (@product.Stock stk.)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="out-of-stock">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    Ikke på lager
+                                </span>
+                            }
+
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Antal -->
+                        <div class="product-quantity-section">
+
+                            <label class="form-label">
+                                Antal
+                            </label>
+
+                            <input type="number"
+                                   class="form-control"
+                                   min="1"
+                                   max="@product.Stock"
+                                   @bind="Quantity"
+                                   disabled="@(product.Stock <= 0)" />
+
+                        </div>
+
+                        <!-- Læg i kurv -->
+                        <button type="button"
+                                class="page-button product-add-to-cart"
+                                disabled="@(product.Stock <= 0)">
+                            <i class="bi bi-cart-plus"></i>
+                            Læg i kurv
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- PRODUKTSPECIFIKATIONER -->
+            <section class="product-specifications mt-5">
+
+                <h2>Produktspecifikationer</h2>
+
+                <p class="page-description">
+                    Her finder du alle oplysninger om produktet.
                 </p>
-            }
-            @if (product is Keycap keycap)
-            {
-                <p><strong>Tema:</strong> @keycap.Theme</p>
-                <p><strong>Antal:</strong> @keycap.Amount</p>
-                <p>
-                    <strong>Kompatibel med baggrundsbelysning:</strong>
-                    @(keycap.IsBacklightCompatible ? "Ja" : "Nej")
-                </p>
-            }
 
-            @if (product is Mousepad mousepad)
-            {
-                <p><strong>Længde:</strong> @mousepad.Length mm</p>
-                <p><strong>Bredde:</strong> @mousepad.Width mm</p>
-                <p><strong>Tykkelse:</strong> @mousepad.Thickness mm</p>
-            } *@
+                <div class="table-responsive mt-4">
+
+                    <table class="table admin-table">
+
+                        <tbody>
+
+                            @foreach (CachedProperty propCached in
+                                PropertyNameHelper.GetPropertiesWithMetaData(product.GetType()))
+                            {
+                                switch (propCached.Property.Name)
+                                {
+                                    case nameof(product.Name)
+                                        or nameof(product.Description)
+                                        or nameof(product.ID)
+                                        or nameof(product.Price)
+                                        or nameof(product.Stock):
+                                        break;
+
+                                    default:
+                                        <tr>
+                                            <th>
+                                                @GetUserProperyName(propCached)
+                                            </th>
+
+                                            <td>
+                                                @propCached.Property.GetValue(product)
+                                            </td>
+                                        </tr>
+                                        break;
+                                }
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
         </div>
-    </div>
-}
-else
-{
-    <p>Produktet blev ikke fundet.</p>
-}
+    }
+    else
+    {
+        <div class="product-not-found">
+
+            <h2>Produktet blev ikke fundet</h2>
+
+            <p class="page-description">
+                Vi kunne desværre ikke finde det ønskede produkt.
+            </p>
+
+            <a href="/" class="page-button">
+                Tilbage til forsiden
+            </a>
+
+        </div>
+    }
+
+</div>
 
 @code {
+
     [Parameter]
     public string Id { get; set; } = "";
 
     private Product? product;
+
+    private int Quantity = 1;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -83,10 +189,20 @@ else
         }
 
         product = await ProductService.GetProductAsync(id);
+
+        Quantity = 1;
     }
 
     private string GetUserProperyName(CachedProperty property)
     {
         return property.UserPageName ?? property.Property.Name;
     }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
 }
