@@ -33,20 +33,19 @@ public class UserLoginRepository
         return result as string;
     }
 
-    public async Task Create(UserLogin userLogin)
+    public async Task CreateAsync(UserLogin userLogin)
     {
         await using var connection = await m_dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
             """
-            INSERT INTO user_logins(user_id, email, password_hash) VALUES(
-            @user_id, @email, @password_hash)
+            INSERT INTO user_logins(user_id, password_hash) VALUES(
+            @user_id, @password_hash)
             RETURNING id
             """,
             connection
         );
 
         command.Parameters.AddWithValue("user_id", userLogin.UserID);
-        command.Parameters.AddWithValue("email", userLogin.Email);
         command.Parameters.AddWithValue("password_hash", userLogin.PhcString);
 
         userLogin.ID = (Guid?)await command.ExecuteScalarAsync() ?? throw new SqlNullValueException($"Could not create the { nameof(UserLogin) }");

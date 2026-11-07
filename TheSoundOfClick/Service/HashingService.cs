@@ -20,9 +20,9 @@ public class HashingService (Argon2Parameters m_argon2Parameters, UserLoginRepos
     public async Task<UserLogin> Create(User user, string password)
     {
         string phcString = HashPassword(password);
-        UserLogin userLogin = new(){ UserID = user.ID, Email = user.Email, PhcString = phcString };
+        UserLogin userLogin = new(){ UserID = user.ID, PhcString = phcString };
 
-        await m_userLoginRepo.Create(userLogin);
+        await m_userLoginRepo.CreateAsync(userLogin);
 
         return userLogin;
     }

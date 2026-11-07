@@ -2,27 +2,31 @@
 
 public class LoginService
 {
-    private readonly UserLoginRepository _userLoginRepository;
-    private readonly HashingService _hashingService;
+    private readonly UserLoginRepository m_userLoginRepo;
+    private readonly HashingService m_hashingService;
 
     public LoginService(
         UserLoginRepository userLoginRepository,
         HashingService hashingService)
     {
-        _userLoginRepository = userLoginRepository;
-        _hashingService = hashingService;
+        m_userLoginRepo = userLoginRepository;
+        m_hashingService = hashingService;
     }
 
     public async Task<bool> ValidateLoginAsync(string email, string password)
     {
-        byte[]? storedHash =
-            await _userLoginRepository.GetPasswordHashAsync(email);
+        string? storedHash = await m_userLoginRepo.GetPasswordHashAsync(email);
 
         if (storedHash == null)
         {
             return false;
         }
 
-        return _hashingService.VerifyPassword(password, storedHash);
+        return m_hashingService.VerifyPassword(password, storedHash).Item1;
+    }
+
+    public async Task CreateAsync(UserLogin userLogin)
+    {
+        await m_userLoginRepo.CreateAsync(userLogin);
     }
 }

@@ -2,6 +2,19 @@
 
 namespace TheSoundOfClick;
 
+public class UserRoleDBV
+{
+  public Guid ID { get; set; }
+  public string Role { get; set; } = "";
+}
+
+public class DiscountRoleDBV
+{
+  public Guid ID { get; set; }
+  public string Role { get; set; } = "";
+}
+
+
 public enum UserRole
 {
   Employee,
