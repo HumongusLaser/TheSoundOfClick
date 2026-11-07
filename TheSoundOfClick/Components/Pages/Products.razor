@@ -1,172 +1,456 @@
 ﻿@page "/products"
 @rendermode InteractiveServer
+
 @inject ProductService ProductService
+
 @using Microsoft.AspNetCore.RateLimiting
-@* @using Microsoft.AspNetCore.Authorization *@
+
 @attribute [EnableRateLimiting("products")]
+
 @* @attribute [Authorize(Roles = "Employee,Admin")] *@
 
-<h3>Produkter</h3>
+<PageTitle>Administrer produkter | The Sound Of Click</PageTitle>
 
-<p>Her kan du se vores udvalg af produkter.</p>
+<div class="page-content">
 
-<!-- Filtrering og sortering -->
-<div class="row g-3 mb-4">
+    <h1>Administrer produkter</h1>
 
-    <div class="col-12 col-md-6">
-        <label for="categoryFilter" class="form-label">Kategori:</label>
+    <p class="page-description">
+        Her kan du oprette, søge efter og administrere produkter.
+    </p>
 
-        <select id="categoryFilter"
-                class="form-select"
-                @bind="selectedCategory"
-                @bind:after="OnCategoryChanged">
+    <hr />
 
-            <option value="all">Alle produkter</option>
-            <option value="keyboard">Tastaturer</option>
-            <option value="keycap">Keycaps</option>
-            <option value="mousepad">Musemåtter</option>
 
-        </select>
+    <div class="employee-form-section mt-4">
+
+        <h3>Tilføj produkt</h3>
+
+        <p class="page-description">
+            Opret et nyt produkt til webshoppen.
+        </p>
+
+        <button type="button"
+                class="page-button mt-3"
+                @onclick="OpenCreatePopup">
+            + Tilføj produkt
+        </button>
+
     </div>
 
-    <div class="col-12 col-md-6">
-        <label for="sortOrder" class="form-label">Sorter efter:</label>
 
-        <select id="sortOrder"
-                class="form-select"
-                @bind="sortOrder"
-                @bind:after="OnSortChanged">
 
-            <option value="default">Standard</option>
-            <option value="priceAsc">Pris: Laveste først</option>
-            <option value="priceDesc">Pris: Højeste først</option>
+    <div class="employee-form-section mt-4">
 
-        </select>
+        <h3>Find produkt</h3>
+
+        <div class="row g-3 mt-2">
+
+            <div class="col-12">
+
+                <label class="form-label">Søg efter produktnavn eller ID</label>
+
+                <input class="form-control"
+                       placeholder="Indtast produktnavn eller ID..."
+                       @bind="SearchText"
+                       @bind:event="oninput" />
+
+            </div>
+
+            <div class="col-md-6">
+
+                <label class="form-label">Kategori</label>
+
+                <select class="form-select" @bind="SelectedCategory">
+
+                    <option value="all">Alle kategorier</option>
+                    <option value="keyboard">Tastaturer</option>
+                    <option value="mouse">Mus</option>
+                    <option value="mousepad">Musemåtter</option>
+                    <option value="keycap">Keycaps</option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <label class="form-label">Sortér efter</label>
+
+                <select class="form-select" @bind="SelectedSort">
+
+                    <option value="default">Standard</option>
+                    <option value="name">Navn: A–Å</option>
+                    <option value="priceAsc">Pris: Laveste først</option>
+                    <option value="priceDesc">Pris: Højeste først</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
     </div>
 
-</div>
 
-<!-- Produktliste -->
-<div class="row g-3">
-    @foreach (var product in pagedProducts)
+
+    @if (HasActiveSearch)
     {
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
+        <div class="employee-form-section mt-4">
 
-                    <h5 class="card-title">
-                        <a href="@($"/product/{product.ID}")">
-                            @product.Name
-                        </a>
-                    </h5>
+            <h3>Søgeresultater</h3>
 
-                    <p class="card-text">@product.Description</p>
+            @if (FilteredProducts.Any())
+            {
+                <div class="table-responsive mt-3">
 
-                    <p class="card-text">
-                        Pris: @product.Price.ToString("0.00") kr.
-                    </p>
+                    <table class="table">
 
-                    <p class="card-text">
-                        På lager: @product.Stock
-                    </p>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Produktnavn</th>
+                                <th>Kategori</th>
+                                <th>Pris</th>
+                                <th>Lager</th>
+                                <th>Handlinger</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var product in FilteredProducts)
+                            {
+                                <tr>
+
+                                    <td>@product.ID</td>
+                                    <td>@product.Name</td>
+                                    <td>@product.Category</td>
+                                    <td>@product.Price.ToString("N2") kr.</td>
+                                    <td>@product.Stock</td>
+
+                                    <td>
+                                        <div class="d-flex gap-2">
+
+                                            <button type="button"
+                                                    class="page-button-outline"
+                                                    title="Rediger produkt"
+                                                    @onclick="() => OpenEditPopup(product)">
+                                                ✏️
+                                            </button>
+
+                                            <button type="button"
+                                                    class="page-button-outline"
+                                                    title="Slet produkt"
+                                                    @onclick="() => OpenDeletePopup(product)">
+                                                🗑️
+                                            </button>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
 
                 </div>
-            </div>
+            }
+            else
+            {
+                <p class="page-description mt-3">
+                    Ingen produkter matcher din søgning.
+                </p>
+            }
+
         </div>
     }
-</div>
-
-
-<div class="d-flex justify-content-center align-items-center gap-3 mt-4">
-
-    <button class="btn btn-outline-primary"
-            disabled="@(currentPage == 1)"
-            @onclick="PreviousPage">
-        Forrige
-    </button>
-
-    <span>Side @currentPage af @totalPages</span>
-
-    <button class="btn btn-outline-primary"
-            disabled="@(currentPage == totalPages)"
-            @onclick="NextPage">
-        Næste
-    </button>
 
 </div>
+
+
+
+@if (ShowCreatePopup)
+{
+    <div class="profile-modal-overlay">
+
+        <div class="profile-modal">
+
+            <h3>Tilføj produkt</h3>
+
+            <hr />
+
+            <div class="row g-3">
+
+                <div class="col-md-12">
+                    <label class="form-label">Produktnavn</label>
+                    <input class="form-control"
+                           @bind="NewProduct.Name" />
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Kategori</label>
+
+                    <select class="form-select"
+                            @bind="NewProduct.CategoryValue">
+
+                        <option value="">Vælg kategori</option>
+                        <option value="keyboard">Tastaturer</option>
+                        <option value="mouse">Mus</option>
+                        <option value="mousepad">Musemåtter</option>
+                        <option value="keycap">Keycaps</option>
+
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Pris (kr.)</label>
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           class="form-control"
+                           @bind="NewProduct.Price" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Antal på lager</label>
+                    <input type="number"
+                           min="0"
+                           class="form-control"
+                           @bind="NewProduct.Stock" />
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Beskrivelse</label>
+                    <textarea class="form-control"
+                              rows="3"
+                              @bind="NewProduct.Description">
+                    </textarea>
+                </div>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(CreateError))
+            {
+                <p class="text-danger mt-3">@CreateError</p>
+            }
+
+            <div class="profile-modal-actions">
+
+                <button type="button"
+                        class="page-button-outline"
+                        @onclick="CloseCreatePopup">
+                    Annuller
+                </button>
+
+                <button type="button"
+                        class="page-button"
+                        @onclick="CreateProduct">
+                    Opret produkt
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
 
 @code {
-    private List<Product> products = new();
-
-    private int currentPage = 1;
-
-    private const int MaxPageSize = 20;
-
-    private int pageSize = 2;
-
-    private int SafePageSize => Math.Clamp(pageSize, 1, MaxPageSize);
-
-    private int totalPages =>
-        Math.Max(1, (int)Math.Ceiling((double)filteredProducts.Count() / SafePageSize));
-
-    private string selectedCategory = "all";
 
 
-    private IEnumerable<Product> filteredProducts =>
-        selectedCategory switch
+    private string SearchText = "";
+    private string SelectedCategory = "all";
+    private string SelectedSort = "default";
+
+    private bool HasActiveSearch =>
+        !string.IsNullOrWhiteSpace(SearchText) ||
+        SelectedCategory != "all";
+
+
+
+    private bool ShowCreatePopup = false;
+    private string CreateError = "";
+
+    private TestProduct NewProduct = new();
+
+
+
+    private List<TestProduct> Productss= new()
+    {
+        new TestProduct
         {
-            "keyboard" => products.OfType<Keyboard>(),
-            "keycap" => products.OfType<Keycap>(),
-            "mousepad" => products.OfType<Mousepad>(),
-            "all" => products,
-            _ => Enumerable.Empty<Product>()
-        };
+            ID = 1001,
+            Name = "Gaming Keyboard RGB",
+            Category = "Tastaturer",
+            CategoryValue = "keyboard",
+            Price = 699,
+            Stock = 15
+        },
 
-    private string sortOrder = "default";
-
-
-    private IEnumerable<Product> sortedProducts =>
-        sortOrder switch
+        new TestProduct
         {
-            "priceAsc" => filteredProducts.OrderBy(p => p.Price),
-            "priceDesc" => filteredProducts.OrderByDescending(p => p.Price),
-            _ => filteredProducts.OrderBy(p => p.ID)
-        };
+            ID = 1002,
+            Name = "Wireless Mechanical Keyboard",
+            Category = "Tastaturer",
+            CategoryValue = "keyboard",
+            Price = 899,
+            Stock = 8
+        },
 
-
-    private IEnumerable<Product> pagedProducts =>
-        sortedProducts
-            .Skip((currentPage - 1) * SafePageSize)
-            .Take(SafePageSize);
-
-    protected override async Task OnInitializedAsync()
-    {
-        @* products = await ProductService.GetAllProductsAsync(); *@
-    }
-
-    private void OnCategoryChanged()
-    {
-        currentPage = 1;
-    }
-
-    private void OnSortChanged()
-    {
-        currentPage = 1;
-    }
-
-    private void NextPage()
-    {
-        if (currentPage < totalPages)
+        new TestProduct
         {
-            currentPage++;
+            ID = 1003,
+            Name = "RGB Gaming Mouse",
+            Category = "Mus",
+            CategoryValue = "mouse",
+            Price = 399,
+            Stock = 25
+        },
+
+        new TestProduct
+        {
+            ID = 1004,
+            Name = "Wireless Gaming Mouse",
+            Category = "Mus",
+            CategoryValue = "mouse",
+            Price = 649,
+            Stock = 12
+        },
+
+        new TestProduct
+        {
+            ID = 1005,
+            Name = "RGB Gaming Mousepad",
+            Category = "Musemåtter",
+            CategoryValue = "mousepad",
+            Price = 299,
+            Stock = 30
+        }
+    };
+
+
+    private IEnumerable<TestProduct> FilteredProducts
+    {
+        get
+        {
+            IEnumerable<TestProduct> products = Productss;
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                products = products.Where(p =>
+                    p.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                    || p.ID.ToString().Contains(SearchText));
+            }
+
+            if (SelectedCategory != "all")
+            {
+                products = products.Where(p =>
+                    p.CategoryValue == SelectedCategory);
+            }
+
+            products = SelectedSort switch
+            {
+                "name" => products.OrderBy(p => p.Name),
+                "priceAsc" => products.OrderBy(p => p.Price),
+                "priceDesc" => products.OrderByDescending(p => p.Price),
+                _ => products.OrderBy(p => p.ID)
+            };
+
+            return products;
         }
     }
 
-    private void PreviousPage()
+
+    private void OpenCreatePopup()
     {
-        if (currentPage > 1)
+        NewProduct = new TestProduct();
+        CreateError = "";
+        ShowCreatePopup = true;
+    }
+
+
+
+    private void CloseCreatePopup()
+    {
+        ShowCreatePopup = false;
+        CreateError = "";
+    }
+
+
+
+    private void CreateProduct()
+    {
+        CreateError = "";
+
+        if (string.IsNullOrWhiteSpace(NewProduct.Name) ||
+            string.IsNullOrWhiteSpace(NewProduct.CategoryValue))
         {
-            currentPage--;
+            CreateError = "Produktnavn og kategori skal udfyldes.";
+            return;
         }
+
+        if (NewProduct.Price <= 0)
+        {
+            CreateError = "Prisen skal være større end 0.";
+            return;
+        }
+
+        if (NewProduct.Stock < 0)
+        {
+            CreateError = "Lagerantal kan ikke være negativt.";
+            return;
+        }
+
+        NewProduct.ID = Productss.Max(p => p.ID) + 1;
+
+        NewProduct.Category = NewProduct.CategoryValue switch
+        {
+            "keyboard" => "Tastaturer",
+            "mouse" => "Mus",
+            "mousepad" => "Musemåtter",
+            "keycap" => "Keycaps",
+            _ => ""
+        };
+
+        Productss.Add(NewProduct);
+
+        SearchText = NewProduct.Name;
+        SelectedCategory = "all";
+
+        CloseCreatePopup();
+    }
+
+
+    private void OpenEditPopup(TestProduct product)
+    {
+       
+    }
+
+    private void OpenDeletePopup(TestProduct product)
+    {
+      
+    }
+
+
+
+    private class TestProduct
+    {
+        public int ID { get; set; }
+
+        public string Name { get; set; } = "";
+
+        public string Description { get; set; } = "";
+
+        public string Category { get; set; } = "";
+
+        public string CategoryValue { get; set; } = "";
+
+        public decimal Price { get; set; }
+
+        public int Stock { get; set; }
     }
 }

@@ -1,0 +1,489 @@
+﻿@page "/profile"
+@rendermode InteractiveServer
+
+@inject NavigationManager Navigation
+
+<PageTitle>Min profil | The Sound Of Click</PageTitle>
+
+<div class="page-content">
+
+    <h1>Min profil</h1>
+
+    <p class="page-description">
+        Her kan du se og administrere dine personlige oplysninger.
+    </p>
+
+    <hr />
+
+    <div class="employee-form-section mt-4">
+
+        <h3>Personlige oplysninger</h3>
+
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-6">
+                <label class="form-label">Fornavn</label>
+                <input class="form-control"
+                       value="@FirstName"
+                       readonly />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Efternavn</label>
+                <input class="form-control"
+                       value="@LastName"
+                       readonly />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">E-mail</label>
+                <input class="form-control"
+                       value="@Email"
+                       readonly />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Telefonnummer</label>
+                <input class="form-control"
+                       value="@PhoneNumber"
+                       readonly />
+            </div>
+
+        </div>
+
+        <button type="button"
+                class="page-button mt-4"
+                @onclick="OpenPersonalPopup">
+            Rediger oplysninger
+        </button>
+
+    </div>
+
+
+    <div class="employee-form-section mt-4">
+
+        <h3>Min adresse</h3>
+
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-8">
+                <label class="form-label">Adresse</label>
+                <input class="form-control"
+                       value="@StreetAddress"
+                       readonly />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Lejlighed</label>
+                <input class="form-control"
+                       value="@Apartment"
+                       readonly />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Postnummer</label>
+                <input class="form-control"
+                       value="@PostalCode"
+                       readonly />
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label">By</label>
+                <input class="form-control"
+                       value="@City"
+                       readonly />
+            </div>
+
+        </div>
+
+        <button type="button"
+                class="page-button mt-4"
+                @onclick="OpenAddressPopup">
+            Rediger adresse
+        </button>
+
+    </div>
+
+    <div class="employee-form-section mt-4">
+
+        <h3>Sikkerhed</h3>
+
+        <p class="page-description">
+            Her kan du ændre din adgangskode.
+        </p>
+
+        <button type="button"
+                class="page-button-outline mt-2"
+                @onclick="GoToChangePassword">
+            Skift adgangskode
+        </button>
+
+    </div>
+
+
+    <div class="employee-form-section mt-4">
+
+        <h3>Mine ordrer</h3>
+
+        <p class="page-description">
+            Her kan du se dine tidligere bestillinger.
+        </p>
+
+        <div class="table-responsive">
+
+            <table class="table">
+
+                <thead>
+                    <tr>
+                        <th>Ordrenummer</th>
+                        <th>Dato</th>
+                        <th>Beløb</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var order in Orders)
+                    {
+                        <tr>
+                            <td>@order.OrderNumber</td>
+                            <td>@order.Date.ToString("dd-MM-yyyy")</td>
+                            <td>@order.Total.ToString("N2") kr.</td>
+                            <td>@order.Status</td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@if (ShowPersonalPopup)
+{
+    <div class="profile-modal-overlay">
+
+        <div class="profile-modal">
+
+            <h3>Rediger personlige oplysninger</h3>
+
+            <hr />
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Fornavn</label>
+                    <input class="form-control"
+                           @bind="EditFirstName" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Efternavn</label>
+                    <input class="form-control"
+                           @bind="EditLastName" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">E-mail</label>
+                    <input type="email"
+                           class="form-control"
+                           @bind="EditEmail" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Telefonnummer</label>
+                    <input type="tel"
+                           class="form-control"
+                           maxlength="8"
+                           @bind="EditPhoneNumber" />
+                </div>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(PersonalError))
+            {
+                <p class="text-danger mt-3">
+                    @PersonalError
+                </p>
+            }
+
+            <div class="profile-modal-actions">
+
+                <button type="button"
+                        class="page-button-outline"
+                        @onclick="ClosePersonalPopup">
+                    Annuller
+                </button>
+
+                <button type="button"
+                        class="page-button"
+                        @onclick="SavePersonalInfo">
+                    Gem ændringer
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@if (ShowAddressPopup)
+{
+    <div class="profile-modal-overlay">
+
+        <div class="profile-modal">
+
+            <h3>Rediger adresse</h3>
+
+            <hr />
+
+            <div class="row g-3">
+
+                <div class="col-md-8">
+                    <label class="form-label">Adresse</label>
+                    <input class="form-control"
+                           @bind="EditStreetAddress" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Lejlighed</label>
+                    <input class="form-control"
+                           @bind="EditApartment" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Postnummer</label>
+                    <input class="form-control"
+                           maxlength="4"
+                           @bind="EditPostalCode" />
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label">By</label>
+                    <input class="form-control"
+                           @bind="EditCity" />
+                </div>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(AddressError))
+            {
+                <p class="text-danger mt-3">
+                    @AddressError
+                </p>
+            }
+
+            <div class="profile-modal-actions">
+
+                <button type="button"
+                        class="page-button-outline"
+                        @onclick="CloseAddressPopup">
+                    Annuller
+                </button>
+
+                <button type="button"
+                        class="page-button"
+                        @onclick="SaveAddress">
+                    Gem ændringer
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+    private string FirstName = "Test";
+    private string LastName = "Bruger";
+    private string Email = "test@example.com";
+    private string PhoneNumber = "12345678";
+    private string StreetAddress = "Testvej 10";
+    private string Apartment = "";
+    private string PostalCode = "3600";
+    private string City = "Frederikssund";
+
+    private bool ShowPersonalPopup = false;
+    private bool ShowAddressPopup = false;
+
+    private string PersonalError = "";
+    private string AddressError = "";
+
+    private string EditFirstName = "";
+    private string EditLastName = "";
+    private string EditEmail = "";
+    private string EditPhoneNumber = "";
+
+    private string EditStreetAddress = "";
+    private string EditApartment = "";
+    private string EditPostalCode = "";
+    private string EditCity = "";
+
+
+    private void OpenPersonalPopup()
+    {
+        EditFirstName = FirstName;
+        EditLastName = LastName;
+        EditEmail = Email;
+        EditPhoneNumber = PhoneNumber;
+
+        PersonalError = "";
+
+        ShowPersonalPopup = true;
+    }
+
+
+    private void ClosePersonalPopup()
+    {
+        ShowPersonalPopup = false;
+        PersonalError = "";
+    }
+
+
+    private void SavePersonalInfo()
+    {
+        PersonalError = "";
+
+        if (string.IsNullOrWhiteSpace(EditFirstName) ||
+            string.IsNullOrWhiteSpace(EditLastName) ||
+            string.IsNullOrWhiteSpace(EditEmail) ||
+            string.IsNullOrWhiteSpace(EditPhoneNumber))
+        {
+            PersonalError = "Alle felter skal udfyldes.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            EditFirstName.Trim(),
+            @"^[\p{L}]+(?:[ '-][\p{L}]+)*$") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(
+            EditLastName.Trim(),
+            @"^[\p{L}]+(?:[ '-][\p{L}]+)*$"))
+        {
+            PersonalError = "Fornavn og efternavn må kun indeholde bogstaver, mellemrum, bindestreger og apostroffer.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            EditEmail.Trim(),
+            @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"))
+        {
+            PersonalError = "Indtast en gyldig e-mailadresse.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            EditPhoneNumber.Trim(),
+            @"^\d{8}$"))
+        {
+            PersonalError = "Telefonnummeret skal indeholde præcis 8 cifre.";
+            return;
+        }
+
+        FirstName = EditFirstName.Trim();
+        LastName = EditLastName.Trim();
+        Email = EditEmail.Trim();
+        PhoneNumber = EditPhoneNumber.Trim();
+
+        ClosePersonalPopup();
+    }
+
+
+    private void OpenAddressPopup()
+    {
+        EditStreetAddress = StreetAddress;
+        EditApartment = Apartment;
+        EditPostalCode = PostalCode;
+        EditCity = City;
+
+        AddressError = "";
+
+        ShowAddressPopup = true;
+    }
+
+    private void CloseAddressPopup()
+    {
+        ShowAddressPopup = false;
+        AddressError = "";
+    }
+
+
+    private void SaveAddress()
+    {
+        AddressError = "";
+
+        if (string.IsNullOrWhiteSpace(EditStreetAddress) ||
+            string.IsNullOrWhiteSpace(EditPostalCode) ||
+            string.IsNullOrWhiteSpace(EditCity))
+        {
+            AddressError = "Adresse, postnummer og by skal udfyldes.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            EditPostalCode.Trim(),
+            @"^\d{4}$"))
+        {
+            AddressError = "Postnummeret skal indeholde præcis 4 cifre.";
+            return;
+        }
+
+        StreetAddress = EditStreetAddress.Trim();
+        Apartment = EditApartment.Trim();
+        PostalCode = EditPostalCode.Trim();
+        City = EditCity.Trim();
+
+        CloseAddressPopup();
+    }
+
+
+
+    private void GoToChangePassword()
+    {
+        Navigation.NavigateTo("/change-password");
+    }
+
+
+    // MIDLERTIDIGE ORDRER
+
+    private List<TestOrder> Orders = new()
+    {
+        new TestOrder
+        {
+            OrderNumber = "1001",
+            Date = new DateTime(2026, 10, 15),
+            Total = 699,
+            Status = "Leveret"
+        },
+
+        new TestOrder
+        {
+            OrderNumber = "1002",
+            Date = new DateTime(2026, 10, 28),
+            Total = 899,
+            Status = "Under behandling"
+        }
+    };
+
+
+    private class TestOrder
+    {
+        public string OrderNumber { get; set; } = "";
+
+        public DateTime Date { get; set; }
+
+        public decimal Total { get; set; }
+
+        public string Status { get; set; } = "";
+    }
+}
