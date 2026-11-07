@@ -1,7 +1,8 @@
-﻿<h3>   </h3>
-<section class="category-section">
+﻿@using TheSoundOfClick.Components.Shared
 
-    <h2>Shop efter kategori</h2>
+<section class="section-layout category-section">
+
+    <h2 class="section-title">Shop efter kategori</h2>
 
     <p class="category-description">
         Find det perfekte udstyr til dit gaming setup
@@ -9,30 +10,55 @@
 
     <div class="category-container">
 
-        <a href="/keyboards" class="category-card">
-            <i class="bi bi-keyboard"></i>
-            <h3>Tastaturer</h3>
-            <p>Find dit næste gaming tastatur</p>
-            <span>Se tastaturer →</span>
-        </a>
-
-        <a href="/mice" class="category-card">
-            <i class="bi bi-mouse"></i>
-            <h3>Mus</h3>
-            <p>Præcision til dit gaming setup</p>
-            <span>Se mus →</span>
-        </a>
-
-        <a href="/mousepads" class="category-card">
-            <i class="bi bi-grid"></i>
-            <h3>Musemåtter</h3>
-            <p>Fuldfør dit gaming setup</p>
-            <span>Se musemåtter →</span>
-        </a>
+        @foreach (var category in Categories)
+        {
+            <CategoryCard Icon="@category.Icon"
+                          Title="@category.Title"
+                          Description="@category.Description"
+                          Link="@category.Link"
+                          LinkText="@category.LinkText" />
+        }
 
     </div>
 
 </section>
 @code {
+    private List<CategoryItem> Categories = new()
+    {
+        new CategoryItem
+        {
+            Icon = "bi bi-keyboard",
+            Title = "Tastaturer",
+            Description = "Find dit næste gaming tastatur",
+            Link = "/keyboards",
+            LinkText = "Se tastaturer →"
+        },
 
+        new CategoryItem
+        {
+            Icon = "bi bi-mouse",
+            Title = "Mus",
+            Description = "Præcision til dit gaming setup",
+            Link = "/mice",
+            LinkText = "Se mus →"
+        },
+
+        new CategoryItem
+        {
+            Icon = "bi bi-grid",
+            Title = "Musemåtter",
+            Description = "Fuldfør dit gaming setup",
+            Link = "/mousepads",
+            LinkText = "Se musemåtter →"
+        }
+    };
+
+    private class CategoryItem
+    {
+        public string Icon { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Link { get; set; } = "";
+        public string LinkText { get; set; } = "";
+    }
 }

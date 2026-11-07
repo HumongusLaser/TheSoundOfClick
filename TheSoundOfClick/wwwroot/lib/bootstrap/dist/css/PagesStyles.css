@@ -1,0 +1,364 @@
+﻿/* 
+   FÆLLES DESIGN TIL PAGES The Sound Of Click*/
+
+.page-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 70px 30px;
+}
+
+
+    .page-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        margin-bottom: 25px;
+    }
+
+    .page-content h2,
+    .page-content h3,
+    .page-content h4 {
+        color: white;
+        font-weight: 700;
+    }
+
+
+.page-description {
+    font-size: 1.2rem;
+    color: #b5b8cc;
+    line-height: 1.7;
+    margin-bottom: 35px;
+}
+
+
+.page-content label {
+    color: white;
+    margin-bottom: 8px;
+}
+
+.page-content .form-control,
+.page-content .form-select {
+    background: white;
+    color: #111827;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+
+.page-button {
+    display: inline-block;
+    padding: 15px 35px;
+    background: linear-gradient(90deg, #00d9ff, #923bff);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+
+    .page-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 25px rgba(0, 217, 255, 0.4);
+        color: white;
+    }
+
+
+.page-button-outline {
+    display: inline-block;
+    padding: 15px 35px;
+    background: transparent;
+    border: 1px solid #00d9ff;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+    text-align: center;
+}
+
+    .page-button-outline:hover {
+        background: rgba(0, 217, 255, 0.1);
+        color: white;
+        transform: translateY(-3px);
+    }
+
+
+@media (max-width: 768px) {
+    .page-content {
+        padding: 40px 20px;
+    }
+
+    .page-description {
+        font-size: 1rem;
+    }
+}
+/* OPRET MEDARBEJDER */
+
+
+.employee-form-section {
+    background: rgba(10, 15, 35, 0.45);
+    border: 1px solid rgba(181, 184, 204, 0.15);
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 30px;
+}
+
+    
+
+    .employee-form-section h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 15px;
+    }
+
+
+
+.employee-form-help {
+    color: #b5b8cc;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+
+.employee-form-section .form-control,
+.employee-form-section .form-select {
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px 15px;
+}
+
+
+    .employee-form-section .form-control:focus,
+    .employee-form-section .form-select:focus {
+        border-color: #00d9ff;
+        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.15);
+    }
+
+
+.employee-form-message {
+    color: #b5b8cc;
+    margin-top: 20px;
+}
+
+
+@media (max-width: 768px) {
+    .employee-form-section {
+        padding: 20px;
+    }
+}
+/*ADMINISTRER BRUGERE - TABELLER */
+
+.admin-table {
+    width: 100%;
+    color: white;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+    .admin-table th {
+        background: rgba(0, 217, 255, 0.1);
+        color: white;
+        padding: 15px;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(0, 217, 255, 0.3);
+    }
+
+    .admin-table td {
+        background: transparent;
+        color: #b5b8cc;
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(181, 184, 204, 0.15);
+    }
+
+    .admin-table tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+/* POPUP TIL MEDARBEJDERADMINISTRATION */
+
+.employee-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.employee-modal {
+    background: #101a38;
+    border: 1px solid rgba(0, 217, 255, 0.25);
+    border-radius: 12px;
+    padding: 35px;
+    width: 100%;
+    max-width: 750px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+}
+
+    .employee-modal h2 {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .employee-modal label {
+        color: white;
+    }
+
+    .employee-modal .form-control,
+    .employee-modal .form-select {
+        background: white;
+        color: #111827;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    /* SLET BRUGER - POPUP */
+
+.employee-delete-modal {
+    max-width: 480px;
+    text-align: center;
+    padding: 40px 35px;
+}
+
+
+.employee-delete-icon {
+    width: 65px;
+    height: 65px;
+    margin: 0 auto 25px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 50%;
+
+    color: #ef4444;
+    font-size: 1.8rem;
+}
+
+
+.employee-delete-description {
+    color: #b5b8cc;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+.employee-delete-description strong {
+    color: white;
+}
+
+
+.employee-delete-warning {
+    color: #f87171;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+}
+
+
+.employee-delete-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.employee-delete-button {
+    padding: 15px 30px;
+
+    background: #dc2626;
+    color: white;
+
+    border: none;
+    border-radius: 8px;
+
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.employee-delete-button:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
+}
+
+/* SLET BRUGER - POPUP*/
+
+.employee-delete-modal {
+    max-width: 480px;
+    text-align: center;
+    padding: 40px 35px;
+}
+
+
+.employee-delete-icon {
+    width: 65px;
+    height: 65px;
+    margin: 0 auto 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 50%;
+    color: #ef4444;
+    font-size: 1.8rem;
+}
+
+
+.employee-delete-description {
+    color: #b5b8cc;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+    .employee-delete-description strong {
+        color: white;
+    }
+
+
+.employee-delete-warning {
+    color: #f87171;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+}
+
+
+
+.employee-delete-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.employee-delete-button {
+    padding: 15px 30px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .employee-delete-button:hover {
+        background: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
+    }

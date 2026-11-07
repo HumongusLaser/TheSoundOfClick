@@ -1,0 +1,25 @@
+﻿<div class="auth-card @(Wide ? "auth-card-wide" : "")">
+    <div class="auth-header">
+        <h1>@Title</h1>
+        <p>@Description</p>
+    </div>
+
+    <div class="auth-content">
+        @ChildContent
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string Description { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public bool Wide { get; set; } = false;
+}

@@ -8,7 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Argon2Sharp" Version="4.0.1" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\PagesStyles.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Argon2Sharp" Version="4.1.0" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 
