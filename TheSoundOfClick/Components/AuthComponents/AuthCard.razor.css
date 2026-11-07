@@ -1,0 +1,50 @@
+﻿/* Formularens kort */
+.auth-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 40px;
+    background: var(--color-card-background);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+}
+
+/* Overskrift og beskrivelse */
+.auth-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+    .auth-header h1 {
+        color: var(--color-text);
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .auth-header p {
+        color: var(--color-text-muted);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+/* Formularens indhold */
+.auth-content {
+    width: 100%;
+}
+
+/* Mobilvisning */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 25px 20px;
+    }
+
+    .auth-header h1 {
+        font-size: 1.7rem;
+    }
+}
+/* Bredere kort til større formularer */
+.auth-card-wide {
+    max-width: 650px;
+}

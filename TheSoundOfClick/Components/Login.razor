@@ -1,26 +1,63 @@
 ﻿@page "/login"
 @rendermode InteractiveServer
+@using TheSoundOfClick.Components.AuthComponents
 
-<h1>Log ind</h1>
+<div class="auth-page">
 
-<p>Log ind på din konto</p>
+    <AuthCard Title="Velkommen tilbage!"
+              Description="Log ind på din konto hos The Sound Of Click">
 
-<label>Email</label>
-<input type="email" @bind="Email" />
+        <div class="auth-form">
 
-<br />
+            <div class="auth-field">
+                <label for="email">Emailadresse</label>
 
-<label>Password</label>
-<input type="password" @bind="Password" />
+                <input id="email"
+                       type="email"
+                       placeholder="Indtast din emailadresse"
+                       autocomplete="email"
+                       @bind="Email" />
+            </div>
 
-<br />
-<a href="/forgot-password">Har du glemt dit password?</a>
+            <div class="auth-field">
+                <label for="password">Adgangskode</label>
 
-<br />
+                <input id="password"
+                       type="password"
+                       placeholder="Indtast din adgangskode"
+                       autocomplete="current-password"
+                       @bind="Password" />
+            </div>
 
-<button @onclick="LoginUser">Log ind</button>
+            <a href="/forgot-password" class="auth-link">
+                Har du glemt din adgangskode?
+            </a>
 
-<p>@Message</p>
+            <button type="button"
+                    class="auth-button"
+                    @onclick="LoginUser">
+                Log ind
+            </button>
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="auth-message" role="status">
+                    @Message
+                </p>
+            }
+
+            <div class="auth-footer">
+                <p>
+                    Har du ikke en konto?
+                    <a href="/register">Opret en konto</a>
+                </p>
+            </div>
+
+        </div>
+
+    </AuthCard>
+
+</div>
 
 @code {
     private string Email = "";
