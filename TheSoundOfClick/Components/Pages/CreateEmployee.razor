@@ -1,0 +1,192 @@
+﻿@page "/manage-employees/create"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@* @attribute [Authorize(Roles = "Admin")]
+ *@
+<PageTitle>Opret medarbejder</PageTitle>
+
+<div class="page-content">
+
+    <h1>Opret medarbejder</h1>
+
+    <p class="page-description">
+        Udfyld oplysningerne for at oprette en medarbejder eller administrator.
+    </p>
+
+    <hr />
+
+  
+    <section class="employee-form-section">
+
+        <h3>Brugerrolle</h3>
+
+        <p class="employee-form-help">
+            Vælg hvilke rettigheder brugeren skal have.
+        </p>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+
+                <label class="form-label">Vælg rolle</label>
+
+                <select class="form-select" @bind="SelectedRole">
+                    <option value="Employee">Employee</option>
+                    <option value="Admin">Admin</option>
+                </select>
+
+            </div>
+        </div>
+
+    </section>
+
+    <section class="employee-form-section">
+
+        <h3>Personlige oplysninger</h3>
+
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-6">
+                <label class="form-label">Fornavn</label>
+                <input class="form-control"
+                       @bind="FirstName" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Efternavn</label>
+                <input class="form-control"
+                       @bind="LastName" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">E-mail</label>
+                <input type="email"
+                       class="form-control"
+                       @bind="Email" />
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label">Adresse</label>
+                <input class="form-control"
+                       @bind="StreetAddress" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Lejlighed (valgfrit)</label>
+                <input class="form-control"
+                       @bind="Apartment" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Postnummer</label>
+                <input class="form-control"
+                       maxlength="4"
+                       @bind="PostalCode" />
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label">By</label>
+                <input class="form-control"
+                       @bind="City" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Telefonnummer</label>
+                <input type="tel"
+                       class="form-control"
+                       maxlength="8"
+                       @bind="PhoneNumber" />
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="employee-form-section">
+
+        <h3>Loginoplysninger</h3>
+
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-6">
+                <label class="form-label">Password</label>
+                <input type="password"
+                       class="form-control"
+                       @bind="Password" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Bekræft password</label>
+                <input type="password"
+                       class="form-control"
+                       @bind="ConfirmPassword" />
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <div class="d-flex flex-wrap gap-3 mt-4">
+
+        <button type="button"
+                class="page-button"
+                @onclick="CreateUser">
+            Opret bruger
+        </button>
+
+        <NavLink class="page-button-outline"
+                 href="/manage-employees">
+            Annuller
+        </NavLink>
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <p class="employee-form-message" role="status">
+            @Message
+        </p>
+    }
+
+</div>
+
+@code {
+
+    private string FirstName = "";
+    private string LastName = "";
+    private string Email = "";
+    private string StreetAddress = "";
+    private string Apartment = "";
+    private string PostalCode = "";
+    private string City = "";
+    private string PhoneNumber = "";
+
+    private string Password = "";
+    private string ConfirmPassword = "";
+
+    private string SelectedRole = "Employee";
+
+    private string Message = "";
+
+    private void CreateUser()
+    {
+        Message = "";
+
+        if (string.IsNullOrWhiteSpace(FirstName) ||
+            string.IsNullOrWhiteSpace(LastName) ||
+            string.IsNullOrWhiteSpace(Email))
+        {
+            Message = "Udfyld venligst alle obligatoriske felter.";
+            return;
+        }
+
+        if (Password != ConfirmPassword)
+        {
+            Message = "De to passwords er ikke ens.";
+            return;
+        }
+
+        Message = "Formularen er udfyldt. Databaseoprettelse er endnu ikke implementeret.";
+    }
+}

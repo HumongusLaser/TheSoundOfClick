@@ -19,53 +19,65 @@
                  class="navbar-logo" />
         </a>
 
-       <nav class="navbar-links">
+        <nav class="navbar-links">
 
-    <NavLink class="nav-link"
-             href=""
-             Match="NavLinkMatch.All">
-        Home
-    </NavLink>
-
-    <NavLink class="nav-link" href="keyboards">
-        Tastaturer
-    </NavLink>
-
-    <NavLink class="nav-link" href="mice">
-        Mus
-    </NavLink>
-
-    <NavLink class="nav-link" href="mousepads">
-        Musemåtter
-    </NavLink>
-
-    @* Kun medarbejdere og admins *@
-    <AuthorizeView Roles="Employee,Admin">
-        <Authorized>
-            <NavLink class="nav-link" href="products">
-                Administrer produkter
+            <NavLink class="nav-link"
+                     href=""
+                     Match="NavLinkMatch.All">
+                Home
             </NavLink>
-        </Authorized>
-    </AuthorizeView>
 
-</nav>
+            <NavLink class="nav-link" href="keyboards">
+                Tastaturer
+            </NavLink>
+
+            <NavLink class="nav-link" href="mice">
+                Mus
+            </NavLink>
+
+            <NavLink class="nav-link" href="mousepads">
+                Musemåtter
+            </NavLink>
+
+            @* Kun medarbejdere og admins *@
+            <AuthorizeView Roles="Employee,Admin">
+                <Authorized>
+                    <NavLink class="nav-link" href="products">
+                        Administrer produkter
+                    </NavLink>
+                </Authorized>
+            </AuthorizeView>
+
+            @* Kun admins *@
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <NavLink class="nav-link" href="manage-employees">
+                        Administrer medarbejdere
+                    </NavLink>
+                </Authorized>
+            </AuthorizeView>
+
+        </nav>
 
         @* Bruger og indkøbskurv *@
         <div class="navbar-actions">
 
-            <NavLink class="nav-link" href="register"
+            <NavLink class="nav-link"
+                     href="register"
                      title="Opret bruger">
                 <i class="bi bi-person-plus"></i>
                 <span>Opret bruger</span>
             </NavLink>
 
-            <NavLink class="nav-link" href="login"
+            <NavLink class="nav-link"
+                     href="login"
                      title="Log ind">
                 <i class="bi bi-person-circle"></i>
                 <span>Log ind</span>
             </NavLink>
 
-            <a class="cart-button" href="cart"
+            <a class="cart-button"
+               href="cart"
                title="Indkøbskurv">
                 <i class="bi bi-bag"></i>
             </a>
