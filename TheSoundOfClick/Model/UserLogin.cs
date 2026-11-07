@@ -4,12 +4,16 @@ namespace TheSoundOfClick;
 
 public class UserLogin
 {
-  public Int128 UserID { get; init; }
-    public byte[] PasswordHash { get; set; }
+  public Guid ID { get; set; }
+  public Guid UserID { get; init; }
+  public string PhcString { get; set; } = "";
 
-    public UserLogin(Int128 userID, byte[] passwordHash)
+  public UserLogin(){}
+
+  public UserLogin(Guid id, Guid userID, string phcString)
   {
+    ID = id;
     UserID = userID;
-    PasswordHash = passwordHash;
+    PhcString = phcString;
   }
 }

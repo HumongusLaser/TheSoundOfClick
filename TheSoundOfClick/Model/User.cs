@@ -2,6 +2,19 @@
 
 namespace TheSoundOfClick;
 
+public class UserRoleDBV
+{
+  public Guid ID { get; set; }
+  public string Role { get; set; } = "";
+}
+
+public class DiscountRoleDBV
+{
+  public Guid ID { get; set; }
+  public string Role { get; set; } = "";
+}
+
+
 public enum UserRole
 {
   Employee,
@@ -20,9 +33,9 @@ public enum DiscountRole
 public class User
 {
   public Guid ID { get; init; }
-  public DateOnly RegisterDate { get; init; }
-  public string FirstName { get; set; }
-  public string LastName { get; set; }
+  public DateOnly RegisterDate { get; set; }
+  public string FirstName { get; set; } = "";
+  public string LastName { get; set; } = "";
   private string email = "";
   public string Email 
   { 
@@ -39,10 +52,10 @@ public class User
       email = value;
     } 
   }
-  public string StreetAddress { get; set; }
+  public string StreetAddress { get; set; } = "";
   public string? Apartment { get; set; }
-  public string PostalCode { get; set; }
-  public string City { get; set; }
+  public string PostalCode { get; set; } = "";
+  public string City { get; set; } = "";
   private string phoneNumber = "";
   public string PhoneNumber
   { 
@@ -61,6 +74,8 @@ public class User
   }
   public UserRole Role { get; set; }
   public DiscountRole DiscountRole { get; set; }
+
+  public User(){}
 
   public User
   (
