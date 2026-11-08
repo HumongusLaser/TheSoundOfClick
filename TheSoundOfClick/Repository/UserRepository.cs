@@ -4,6 +4,23 @@ namespace TheSoundOfClick;
 
 public class UserRepository(NpgsqlDataSource m_dbSource)
 {
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        await using var connection = await m_dbSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM users
+                WHERE LOWER(email) = LOWER(@email)
+            )
+            """,
+            connection);
+
+        command.Parameters.AddWithValue("email", email);
+        return (bool?)await command.ExecuteScalarAsync() ?? false;
+    }
+
     public async Task<Guid> CreateCustomerAsync(User user)
     {
         UserRoleDBV[] userRoleDBVs = await GetUserRoleDBVsAsync();
@@ -83,7 +100,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource)
     {
         string commandStr = 
         """
-        SELECT register_date, first_name, last_name, email, street_address, apartment, postal_code, city, phone_number, role, discount_role
+        SELECT id, register_date, first_name, last_name, email, street_address, apartment, postal_code, city, phone_number, role, discount_role
         FROM users
         WHERE LOWER(users.email) = LOWER(@email)
         """;

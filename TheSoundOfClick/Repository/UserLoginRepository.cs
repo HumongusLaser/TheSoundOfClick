@@ -50,4 +50,35 @@ public class UserLoginRepository
 
         userLogin.ID = (Guid?)await command.ExecuteScalarAsync() ?? throw new SqlNullValueException($"Could not create the { nameof(UserLogin) }");
     }
+
+    public async Task<UserLogin> GetByUserIDAsync(Guid userID)
+    {
+        string commandStr = 
+        """
+        SELECT id, user_id, password_hash
+        FROM user_logins
+        WHERE user_id = @user_id
+        """;
+
+        await using var connection = await m_dataSource.OpenConnectionAsync();
+        await using var cmd = new NpgsqlCommand(commandStr, connection);
+
+        cmd.Parameters.AddWithValue("user_id", userID);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            throw new NotFoundException("Discount role not found");
+        }
+
+        UserLogin userLogin = new()
+        {
+            ID = reader.GetGuid(0),
+            UserID = reader.GetGuid(1),
+            PhcString = reader.GetString(2)
+        };
+
+        return userLogin;
+    }
 }

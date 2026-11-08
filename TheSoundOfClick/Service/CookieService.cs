@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace TheSoundOfClick;
 
-public class CookieService(IJSRuntime m_jsRuntime)
+public class CookieService(NavigationManager m_navigationManager)
 {
-    public async Task Create(string email, UserRole userRole)
+    public async Task Create(string email, string password)
     {
-        await m_jsRuntime.InvokeVoidAsync(
-            "submitAuthRequest",
-            email,
-            userRole.ToString());
+
     }
 }
