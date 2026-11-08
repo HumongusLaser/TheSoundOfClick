@@ -14,7 +14,7 @@ builder.Services.AddAuthentication(
     {
         options.Cookie.Name = "TheSoundOfClick.Auth";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
 
         options.LoginPath = "/login";
@@ -25,10 +25,9 @@ builder.Services.AddAuthentication(
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
@@ -46,8 +45,7 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-builder.Services.AddScoped<ProductService>();
-
+builder.Services.AddHttpContextAccessor();
 
 string secretFile = File.ReadAllText("secret.json");
 
@@ -61,18 +59,25 @@ using (JsonDocument secretJson = JsonDocument.Parse(secretFile))
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton(Argon2Parameters.CreateHighSecurity());
+builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<DiscountRepository>();
 builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserLoginRepository>();
 builder.Services.AddScoped<HashingService>();
 builder.Services.AddScoped<LoginService>();
-
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<CookieService>();
+builder.Services.AddScoped(sp => new HttpClient());
 // Add services to the container.
 builder.Services.AddRazorComponents()
   .AddInteractiveServerComponents();
 
-var app = builder.Build();
+builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddControllers();
+
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -91,6 +96,7 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapControllers();
 app.MapRazorComponents<App>()
   .AddInteractiveServerRenderMode();
 

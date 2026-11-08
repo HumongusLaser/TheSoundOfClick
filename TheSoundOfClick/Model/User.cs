@@ -32,7 +32,7 @@ public enum DiscountRole
 
 public class User
 {
-  public Guid ID { get; init; }
+  public Guid ID { get; set; }
   public DateOnly RegisterDate { get; set; }
   public string FirstName { get; set; } = "";
   public string LastName { get; set; } = "";

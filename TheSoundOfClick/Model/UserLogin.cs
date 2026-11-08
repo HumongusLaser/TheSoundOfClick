@@ -5,7 +5,7 @@ namespace TheSoundOfClick;
 public class UserLogin
 {
   public Guid ID { get; set; }
-  public Guid UserID { get; init; }
+  public Guid UserID { get; set; }
   public string PhcString { get; set; } = "";
 
   public UserLogin(){}

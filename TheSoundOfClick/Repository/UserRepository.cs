@@ -2,19 +2,20 @@
 
 namespace TheSoundOfClick;
 
-public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_userLoginRepo)
+public class UserRepository(NpgsqlDataSource m_dbSource)
 {
-    public async Task<Guid> CreateCustomerAsync(User user, string phcString)
+    public async Task<Guid> CreateCustomerAsync(User user)
     {
         UserRoleDBV[] userRoleDBVs = await GetUserRoleDBVsAsync();
         DiscountRoleDBV[] discountRoleDBVs = await GetDiscountTypeDBVsAsync();
+
         Guid role = userRoleDBVs.FirstOrDefault(u => u.Role == "Customer")?.ID ?? throw new NpgsqlException("Customer type not found internal DB naming error");
-        Guid discountRole = userRoleDBVs.FirstOrDefault(u => u.Role == "Customer")?.ID ?? throw new NpgsqlException("Customer type not found internal DB naming error");
+        Guid discountRole = discountRoleDBVs.FirstOrDefault(u => u.Role == "Customer")?.ID ?? throw new NpgsqlException("Customer discount type not found internal DB naming error");
         
         string commandStr = 
         $"""
         INSERT INTO users (register_date, first_name, last_name, email, street_address, apartment, postal_code, city, phone_number, role, discount_role)
-        VALUES (@register_date, @first_name, @last_name, @email, @street_address, @apartment, @postal_code, @city, @phone_number, { role }, { discountRole })
+        VALUES (@register_date, @first_name, @last_name, @email, @street_address, @apartment, @postal_code, @city, @phone_number, @role, @discount_role)
         RETURNING id
         """;
 
@@ -30,11 +31,10 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
         cmd.Parameters.AddWithValue("postal_code", user.PostalCode);
         cmd.Parameters.AddWithValue("city", user.City);
         cmd.Parameters.AddWithValue("phone_number", user.PhoneNumber);
+        cmd.Parameters.AddWithValue("role", role);
+        cmd.Parameters.AddWithValue("discount_role", discountRole);
         
         Guid userID = (Guid?)await cmd.ExecuteScalarAsync() ?? throw new NpgsqlException("Internal error could not save user in DB");
-
-        UserLogin userLogin = new(){UserID = userID, PhcString = phcString};
-        await m_userLoginRepo.CreateAsync(userLogin);
         return userID;
     }
 
@@ -186,7 +186,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
     {
         string commandStr = 
         """
-        SELECT *
+        SELECT id, role
         FROM user_roles
         """;
 
@@ -203,6 +203,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
                 ID = reader.GetGuid(0),
                 Role = reader.GetString(1),
             };
+            userRoles.Add(userRole);
         }
 
         return userRoles.ToArray();
@@ -212,7 +213,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
     {
         string commandStr = 
         """
-        SELECT *
+        SELECT id, role
         FROM discount_roles
         """;
 
@@ -220,7 +221,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
         await using var cmd = new NpgsqlCommand(commandStr, connection);
         await using var reader = await cmd.ExecuteReaderAsync();
 
-        List<DiscountRoleDBV> userRoles = [];
+        List<DiscountRoleDBV> discountRoles = [];
 
         while (await reader.ReadAsync())
         {
@@ -229,8 +230,9 @@ public class UserRepository(NpgsqlDataSource m_dbSource, UserLoginRepository m_u
                 ID = reader.GetGuid(0),
                 Role = reader.GetString(1),
             };
+            discountRoles.Add(userRole);
         }
 
-        return userRoles.ToArray();
+        return discountRoles.ToArray();
     }
 }

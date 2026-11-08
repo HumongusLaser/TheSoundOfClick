@@ -5,7 +5,7 @@ using Argon2Sharp;
 
 namespace TheSoundOfClick;
 
-public class HashingService (Argon2Parameters m_argon2Parameters, UserLoginRepository m_userLoginRepo)
+public class HashingService(Argon2Parameters m_argon2Parameters, UserLoginRepository m_userLoginRepo)
 {
     public string HashPassword(string password)
     {

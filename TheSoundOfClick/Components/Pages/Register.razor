@@ -1,6 +1,13 @@
 ﻿@page "/register"
+@layout MainLayout
 @rendermode InteractiveServer
+@using System.Data.Common
+@using System.Data.SqlTypes
+@using Npgsql
 @using TheSoundOfClick.Components.AuthComponents
+@inject UserService m_userService
+@inject HashingService m_hashingService
+@inject CookieService m_cookieService
 
 <div class="auth-page">
 
@@ -175,7 +182,7 @@
 
     ValidationService validationService = new ValidationService();
 
-    private void RegisterUser()
+    private async Task RegisterUser()
     {
         Message = "";
 
@@ -230,10 +237,43 @@
             Message = "Dine passwords er ikke ens.";
             return;
         }
-        
+
         Message = "Alle oplysninger er godkendt. Brugeren er endnu ikke oprettet.";
+        await CreateUserAsync();
+        await m_cookieService.Create(Email, UserRole.Customer);
     }
 
-  
+    private async Task CreateUserAsync()
+    {
+        DateTime dateTime = DateTime.UtcNow;
+        DateOnly dateOnly = new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
+        User user = new()
+        {
+            FirstName = FirstName,
+            LastName = LastName,
+            Apartment = Apartment,
+            City = City,
+            Email = Email,
+            PhoneNumber = PhoneNumber,
+            PostalCode = PostalCode,
+            StreetAddress = StreetAddress,
+            RegisterDate = dateOnly
+        };
+
+        UserLogin userLogin = new()
+        {
+            PhcString = m_hashingService.HashPassword(Password)
+        };
+
+        try
+        {
+            await m_userService.CreateAsync(user, userLogin);
+        }
+        catch (Exception ex) when (ex is NpgsqlException || ex is SqlNullValueException || ex is DbException || ex is NotFoundException)
+        {
+            Message = "Intern system fejl du kan ikke oprette en bruger lige nu" + $"\n {ex.Message}";
+            Console.WriteLine($"\n\n{ex.Message}");
+        }
+    }
 
 }
