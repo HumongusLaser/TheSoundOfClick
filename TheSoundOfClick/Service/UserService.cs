@@ -2,9 +2,11 @@
 
 public class UserService(UserLoginRepository m_userLoginRepo, UserRepository m_userRepo, HashingService m_hashingService)
 {
-    public async Task CreateAsync(User user, UserLogin userLogin)
+    public async Task CreateCustomerAsync(User user, UserLogin userLogin)
     {
-        userLogin.UserID = await m_userRepo.CreateCustomerAsync(user);
+        user.Role = UserRole.Customer;
+        user.DiscountRole = DiscountRole.Customer;
+        userLogin.UserID = await m_userRepo.CreateAsync(user);
         user.ID = userLogin.UserID;
         await m_userLoginRepo.CreateAsync(userLogin);
     }

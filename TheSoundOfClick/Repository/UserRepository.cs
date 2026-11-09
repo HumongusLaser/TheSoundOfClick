@@ -21,13 +21,13 @@ public class UserRepository(NpgsqlDataSource m_dbSource)
         return (bool?)await command.ExecuteScalarAsync() ?? false;
     }
 
-    public async Task<Guid> CreateCustomerAsync(User user)
+    public async Task<Guid> CreateAsync(User user)
     {
         UserRoleDBV[] userRoleDBVs = await GetUserRoleDBVsAsync();
         DiscountRoleDBV[] discountRoleDBVs = await GetDiscountTypeDBVsAsync();
 
-        Guid role = userRoleDBVs.FirstOrDefault(u => u.Role == "Customer")?.ID ?? throw new NpgsqlException("Customer type not found internal DB naming error");
-        Guid discountRole = discountRoleDBVs.FirstOrDefault(u => u.Role == "Customer")?.ID ?? throw new NpgsqlException("Customer discount type not found internal DB naming error");
+        Guid role = userRoleDBVs.FirstOrDefault(u => u.Role == user.Role.ToString())?.ID ?? throw new NpgsqlException("Customer type not found internal DB naming error");
+        Guid discountRole = discountRoleDBVs.FirstOrDefault(u => u.Role == user.DiscountRole.ToString())?.ID ?? throw new NpgsqlException("Customer discount type not found internal DB naming error");
         
         string commandStr = 
         $"""
@@ -44,7 +44,7 @@ public class UserRepository(NpgsqlDataSource m_dbSource)
         cmd.Parameters.AddWithValue("last_name", user.LastName);
         cmd.Parameters.AddWithValue("email", user.Email);
         cmd.Parameters.AddWithValue("street_address", user.StreetAddress);
-        cmd.Parameters.AddWithValue("apartment", (object?)user.Apartment ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("apartment", string.IsNullOrWhiteSpace(user.Apartment) ? DBNull.Value : user.Apartment);
         cmd.Parameters.AddWithValue("postal_code", user.PostalCode);
         cmd.Parameters.AddWithValue("city", user.City);
         cmd.Parameters.AddWithValue("phone_number", user.PhoneNumber);

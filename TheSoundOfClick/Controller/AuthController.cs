@@ -96,7 +96,7 @@ public class AuthController : ControllerBase
             if (await userService.EmailExistsAsync(request.Email))
                 return LocalRedirect("/register?error=email-taken");
 
-            await userService.CreateAsync(user, userLogin);
+            await userService.CreateCustomerAsync(user, userLogin);
         }
         catch (Exception ex) when (ex is DbException or SqlNullValueException or NotFoundException)
         {
