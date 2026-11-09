@@ -362,3 +362,412 @@
         transform: translateY(-2px);
         box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
     }
+
+/* SLET BRUGER - POPUP*/
+
+.employee-delete-modal {
+    max-width: 480px;
+    text-align: center;
+    padding: 40px 35px;
+}
+
+
+.employee-delete-icon {
+    width: 65px;
+    height: 65px;
+    margin: 0 auto 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 50%;
+    color: #ef4444;
+    font-size: 1.8rem;
+}
+
+
+.employee-delete-description {
+    color: #b5b8cc;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+    .employee-delete-description strong {
+        color: white;
+    }
+
+
+.employee-delete-warning {
+    color: #f87171;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+}
+
+
+.employee-delete-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.employee-delete-button {
+    padding: 15px 30px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .employee-delete-button:hover {
+        background: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
+    }
+
+/* PRODUKTKORT - THE SOUND OF CLICK */
+
+.product-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        border-color: #00cfff;
+    }
+
+.product-image {
+    height: 230px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+
+.product-info {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+    .product-info h3 {
+        font-size: 21px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 12px;
+    }
+
+    .product-info p {
+        font-size: 14px;
+        color: #b8bfd6;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+
+.product-price {
+    font-size: 25px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: auto;
+    margin-bottom: 20px;
+}
+
+
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+}
+
+    .product-actions .page-button,
+    .product-actions .page-button-outline {
+        flex: 1;
+        text-align: center;
+        padding: 12px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+@media (max-width: 576px) {
+    .product-image {
+        height: 200px;
+    }
+
+    .product-info {
+        padding: 20px;
+    }
+
+    .product-actions {
+        flex-direction: column;
+    }
+}
+/* PRODUKTDETALJER - THE SOUND OF CLICK*/
+
+.product-details-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+
+.product-details-image {
+    width: 100%;
+    min-height: 420px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.product-image-placeholder {
+    text-align: center;
+    color: #8992b3;
+}
+
+    .product-image-placeholder i {
+        font-size: 65px;
+        display: block;
+        margin-bottom: 15px;
+        color: #687394;
+    }
+
+    .product-image-placeholder p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+
+.product-details-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+    .product-details-info h1 {
+        font-size: 34px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 20px;
+    }
+
+.product-details-description {
+    font-size: 16px;
+    color: #b8bfd6;
+    line-height: 1.7;
+    margin-bottom: 25px;
+}
+
+
+.product-details-price {
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 15px;
+}
+
+
+.product-stock-status {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.in-stock {
+    color: #65d6a1;
+}
+
+.out-of-stock {
+    color: #ff6b6b;
+}
+
+.product-stock-status i {
+    margin-right: 6px;
+}
+
+
+.product-quantity-section {
+    margin-bottom: 25px;
+}
+
+    .product-quantity-section label {
+        color: #ffffff;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .product-quantity-section input {
+        max-width: 120px;
+    }
+
+
+.product-add-to-cart {
+    min-width: 220px;
+    padding: 14px 25px;
+    font-size: 15px;
+}
+
+    .product-add-to-cart i {
+        margin-right: 8px;
+    }
+
+    .product-add-to-cart:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+
+.product-specifications {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 35px;
+}
+
+    .product-specifications h2 {
+        color: #ffffff;
+        font-size: 25px;
+        font-weight: 600;
+    }
+
+    .product-specifications table {
+        width: 100%;
+    }
+
+    .product-specifications th {
+        width: 35%;
+        font-weight: 600;
+    }
+
+    .product-specifications td {
+        color: #d5daeb;
+    }
+
+
+.product-not-found {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+    .product-not-found h2 {
+        color: #ffffff;
+        margin-bottom: 20px;
+    }
+
+@media (max-width: 768px) {
+
+    .product-details-image {
+        min-height: 280px;
+    }
+
+    .product-details-info h1 {
+        font-size: 27px;
+    }
+
+    .product-details-price {
+        font-size: 30px;
+    }
+
+    .product-specifications {
+        padding: 20px;
+    }
+
+    .product-add-to-cart {
+        width: 100%;
+    }
+}
+
+
+.profile-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.profile-modal {
+    background: #101a38;
+    border: 1px solid rgba(140, 100, 255, 0.35);
+    border-radius: 12px;
+    padding: 30px;
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    color: white;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+    .profile-modal h3 {
+        margin-bottom: 15px;
+    }
+
+.profile-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+@media (max-width: 576px) {
+    .profile-modal {
+        padding: 20px;
+    }
+
+    .profile-modal-actions {
+        flex-direction: column;
+    }
+}
+
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: #00d9ff;
+    font-size: 22px;
+    text-decoration: none;
+    border: 1px solid #00d9ff;
+    border-radius: 10px;
+    transition: 0.2s ease;
+    flex-shrink: 0;
+}
+
+    .profile-button:hover {
+        color: white;
+        background: rgba(0, 217, 255, 0.12);
+        border-color: #a855f7;
+    }
+
+    .profile-button.active {
+        color: white;
+        border-color: #a855f7;
+    }

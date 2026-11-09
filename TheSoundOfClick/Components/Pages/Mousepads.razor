@@ -1,0 +1,233 @@
+﻿@page "/mousepads"
+@rendermode InteractiveServer
+
+<PageTitle>Musemåtter | The Sound Of Click</PageTitle>
+
+<div class="page-content">
+
+    <h1>Musemåtter</h1>
+
+    <p class="page-description">
+        Find den perfekte musemåtte til dit gaming-setup.
+    </p>
+
+    <hr />
+
+    <div class="row g-3 mb-4 mt-4">
+
+        <div class="col-md-4">
+
+            <label class="form-label">Størrelse</label>
+
+            <select class="form-select" @bind="SelectedSize">
+                <option value="all">Alle størrelser</option>
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+                <option value="Large">Large</option>
+                <option value="Extended">Extended (XXL)</option>
+            </select>
+
+        </div>
+        <div class="col-md-4">
+
+            <label class="form-label">RGB-belysning</label>
+
+            <select class="form-select" @bind="SelectedRGB">
+                <option value="all">Alle</option>
+                <option value="yes">Med RGB</option>
+                <option value="no">Uden RGB</option>
+            </select>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <label class="form-label">Sortér efter</label>
+
+            <select class="form-select" @bind="SelectedSort">
+                <option value="default">Standard</option>
+                <option value="price-asc">Pris: Laveste først</option>
+                <option value="price-desc">Pris: Højeste først</option>
+                <option value="name">Navn: A–Å</option>
+            </select>
+
+        </div>
+
+    </div>
+
+    <div class="row g-4 mt-3">
+
+        @if (FilteredMousepads.Any())
+        {
+            @foreach (var mousepad in FilteredMousepads)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="product-card">
+                        <div class="product-image">
+
+                            <img src="@mousepad.Image"
+                                 alt="@mousepad.Name" />
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <h3>@mousepad.Name</h3>
+
+                            <p>@mousepad.Description</p>
+
+                            <div class="product-price">
+                                @mousepad.Price.ToString("N2") kr.
+                            </div>
+
+                            <div class="product-actions">
+
+                                <button type="button"
+                                        class="page-button-outline">
+                                    Se produkt
+                                </button>
+
+                                <button type="button"
+                                        class="page-button">
+                                    Læg i kurv
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+
+                <div class="employee-form-section text-center">
+
+                    <h3>Ingen produkter fundet</h3>
+
+                    <p class="page-description">
+                        Der er desværre ingen musemåtter, der matcher dine valgte filtre.
+                    </p>
+
+                    <button type="button"
+                            class="page-button-outline mt-3"
+                            @onclick="ResetFilters">
+                        Nulstil filtre
+                    </button>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    private string SelectedSize = "all";
+    private string SelectedRGB = "all";
+    private string SelectedSort = "default";
+
+    private List<MousepadProduct> Mousepadsss = new()
+    {
+        new MousepadProduct
+        {
+            Name = "RGB Gaming Mousepad",
+            Description = "Gaming-musemåtte med RGB-belysning langs kanten.",
+            Price = 299,
+            Image = "/images/mousepads/mousepad1.jpg",
+            Size = "Large",
+            HasRGB = true
+        },
+
+        new MousepadProduct
+        {
+            Name = "Extended Gaming Mousepad",
+            Description = "Stor musemåtte med plads til både tastatur og mus.",
+            Price = 249,
+            Image = "/images/mousepads/mousepad2.jpg",
+            Size = "Extended",
+            HasRGB = false
+        },
+
+        new MousepadProduct
+        {
+            Name = "Precision Gaming Mousepad",
+            Description = "Musemåtte med glat overflade og høj præcision.",
+            Price = 179,
+            Image = "/images/mousepads/mousepad3.jpg",
+            Size = "Medium",
+            HasRGB = false
+        }
+    };
+
+
+    private IEnumerable<MousepadProduct> SortedMousepads =>
+        SelectedSort switch
+        {
+            "price-asc" => Mousepadsss.OrderBy(m => m.Price),
+
+            "price-desc" => Mousepadsss.OrderByDescending(m => m.Price),
+
+            "name" => Mousepadsss.OrderBy(m => m.Name),
+
+            _ => Mousepadsss
+        };
+
+
+
+    private IEnumerable<MousepadProduct> FilteredMousepads
+    {
+        get
+        {
+            var mousepads = SortedMousepads;
+
+            if (SelectedSize != "all")
+            {
+                mousepads = mousepads.Where(m => m.Size == SelectedSize);
+            }
+
+            if (SelectedRGB == "yes")
+            {
+                mousepads = mousepads.Where(m => m.HasRGB);
+            }
+            else if (SelectedRGB == "no")
+            {
+                mousepads = mousepads.Where(m => !m.HasRGB);
+            }
+
+            return mousepads;
+        }
+    }
+
+
+    private void ResetFilters()
+    {
+        SelectedSize = "all";
+        SelectedRGB = "all";
+        SelectedSort = "default";
+    }
+
+
+    private class MousepadProduct
+    {
+        public string Name { get; set; } = "";
+
+        public string Description { get; set; } = "";
+
+        public decimal Price { get; set; }
+
+        public string Image { get; set; } = "";
+
+        public string Size { get; set; } = "";
+
+        public bool HasRGB { get; set; }
+    }
+}
