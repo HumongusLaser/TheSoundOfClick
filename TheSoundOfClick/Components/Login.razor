@@ -7,16 +7,18 @@
     <AuthCard Title="Velkommen tilbage!"
               Description="Log ind på din konto hos The Sound Of Click">
 
-        <div class="auth-form">
+        <form class="auth-form" method="post" action="/api/auth/signin">
+            <AntiforgeryToken />
 
             <div class="auth-field">
                 <label for="email">Emailadresse</label>
 
                 <input id="email"
                        type="email"
+                       name="Email"
                        placeholder="Indtast din emailadresse"
                        autocomplete="email"
-                       @bind="Email" />
+                       required />
             </div>
 
             <div class="auth-field">
@@ -24,25 +26,24 @@
 
                 <input id="password"
                        type="password"
+                       name="Password"
                        placeholder="Indtast din adgangskode"
                        autocomplete="current-password"
-                       @bind="Password" />
+                       required />
             </div>
 
             <a href="/forgot-password" class="auth-link">
                 Har du glemt din adgangskode?
             </a>
 
-            <button type="button"
-                    class="auth-button"
-                    @onclick="LoginUser">
+            <button type="submit" class="auth-button">
                 Log ind
             </button>
 
-            @if (!string.IsNullOrEmpty(Message))
+            @if (Error == "invalid")
             {
                 <p class="auth-message" role="status">
-                    @Message
+                    Email eller adgangskode er forkert.
                 </p>
             }
 
@@ -52,36 +53,13 @@
                     <a href="/register">Opret en konto</a>
                 </p>
             </div>
-
-        </div>
+        </form>
 
     </AuthCard>
 
 </div>
 
 @code {
-    private string Email = "";
-    private string Password = "";
-    private string Message = "";
-
-    private void LoginUser()
-    {
-        Message = "";
-
-        ValidationService validationService = new ValidationService();
-
-        if (!validationService.IsValidEmail(Email))
-        {
-            Message = "Du skal skrive en gyldig emailadresse.";
-            return;
-        }
-
-        if (string.IsNullOrEmpty(Password))
-        {
-            Message = "Du skal skrive dit password.";
-            return;
-        }
-
-        Message = "Loginoplysningerne er udfyldt. Login er endnu ikke implementeret.";
-    }
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
 }

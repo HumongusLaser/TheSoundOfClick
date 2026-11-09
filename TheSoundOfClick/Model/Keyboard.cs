@@ -37,7 +37,7 @@
 
     public string Size { get; set; } = "";
 
-    public Keyboard(Guid id, int stock, string name, decimal price, string color, string layout, bool isWireless, string switchType, string description, string size, int netWeight, int grossWeight) : 
+    public Keyboard(Guid id, int stock, string name, decimal price, string color, string layout, bool isWireless, string switchType, string description, string size, int netWeight) : 
       base(id, stock, name, price, color, description, netWeight)
     {
       Layout = layout;

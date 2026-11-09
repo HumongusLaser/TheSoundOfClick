@@ -1,13 +1,6 @@
-﻿@page "/register"
-@layout MainLayout
+@page "/register"
 @rendermode InteractiveServer
-@using System.Data.Common
-@using System.Data.SqlTypes
-@using Npgsql
 @using TheSoundOfClick.Components.AuthComponents
-@inject UserService m_userService
-@inject HashingService m_hashingService
-@inject CookieService m_cookieService
 
 <div class="auth-page">
 
@@ -15,7 +8,8 @@
           Description="Bliv en del af The Sound Of Click"
           Wide="true">
 
-        <div class="auth-form">
+        <form class="auth-form" method="post" action="/api/auth/register">
+            <AntiforgeryToken />
 
             <h3 class="auth-section-title">Personlige oplysninger</h3>
 
@@ -25,18 +19,20 @@
                     <label for="firstName">Fornavn</label>
                     <input id="firstName"
                            type="text"
+                           name="FirstName"
                            placeholder="Fornavn"
                            autocomplete="given-name"
-                           @bind="FirstName" />
+                           required />
                 </div>
 
                 <div class="auth-field">
                     <label for="lastName">Efternavn</label>
                     <input id="lastName"
                            type="text"
+                           name="LastName"
                            placeholder="Efternavn"
                            autocomplete="family-name"
-                           @bind="LastName" />
+                           required />
                 </div>
 
             </div>
@@ -45,9 +41,10 @@
                 <label for="email">Emailadresse</label>
                 <input id="email"
                        type="email"
+                       name="Email"
                        placeholder="Indtast din emailadresse"
                        autocomplete="email"
-                       @bind="Email" />
+                       required />
             </div>
 
             <h3 class="auth-section-title">Adresse</h3>
@@ -56,17 +53,19 @@
                 <label for="street">Vejnavn og husnummer</label>
                 <input id="street"
                        type="text"
+                       name="StreetAddress"
                        placeholder="Eksempel: Hovedgaden 12"
                        autocomplete="street-address"
-                       @bind="StreetAddress" />
+                       required />
             </div>
 
             <div class="auth-field">
                 <label for="apartment">Etage og dør (valgfrit)</label>
                 <input id="apartment"
                        type="text"
+                       name="Apartment"
                        placeholder="Eksempel: 2. th."
-                       @bind="Apartment" />
+                       />
             </div>
 
             <div class="auth-row">
@@ -75,20 +74,22 @@
                     <label for="postalCode">Postnummer</label>
                     <input id="postalCode"
                            type="text"
+                           name="PostalCode"
                            inputmode="numeric"
                            maxlength="4"
                            placeholder="1234"
                            autocomplete="postal-code"
-                           @bind="PostalCode" />
+                           required />
                 </div>
 
                 <div class="auth-field">
                     <label for="city">By</label>
                     <input id="city"
                            type="text"
+                           name="City"
                            placeholder="By"
                            autocomplete="address-level2"
-                           @bind="City" />
+                           required />
                 </div>
 
             </div>
@@ -101,11 +102,12 @@
 
                     <input id="phone"
                            type="tel"
+                           name="PhoneNumber"
                            inputmode="numeric"
                            maxlength="8"
                            placeholder="12345678"
                            autocomplete="tel-national"
-                           @bind="PhoneNumber" />
+                           required />
                 </div>
             </div>
 
@@ -127,30 +129,30 @@
 
                 <input id="password"
                        type="password"
+                       name="Password"
                        placeholder="Opret en adgangskode"
                        autocomplete="new-password"
-                       @bind="Password" />
+                       required />
             </div>
 
             <div class="auth-field">
                 <label for="confirmPassword">Gentag adgangskode</label>
                 <input id="confirmPassword"
                        type="password"
+                       name="ConfirmPassword"
                        placeholder="Gentag din adgangskode"
                        autocomplete="new-password"
-                       @bind="ConfirmPassword" />
+                       required />
             </div>
 
-            <button type="button"
-                    class="auth-button"
-                    @onclick="RegisterUser">
+            <button type="submit" class="auth-button">
                 Opret konto
             </button>
 
-            @if (!string.IsNullOrEmpty(Message))
+            @if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 <p class="auth-message" role="status">
-                    @Message
+                    @ErrorMessage
                 </p>
             }
 
@@ -160,120 +162,29 @@
                     <a href="/login">Log ind</a>
                 </p>
             </div>
-
-        </div>
+        </form>
 
     </AuthCard>
 
 </div>
 
 @code {
-    private string FirstName = "";
-    private string LastName = "";
-    private string Email = "";
-    private string StreetAddress = "";
-    private string Apartment = "";
-    private string PostalCode = "";
-    private string City = "";
-    private string PhoneNumber = "";
-    private string Password = "";
-    private string ConfirmPassword = "";
-    private string Message = "";
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
 
-    ValidationService validationService = new ValidationService();
-
-    private async Task RegisterUser()
+    private string? ErrorMessage => Error switch
     {
-        Message = "";
-
-        if (!validationService.IsValidName(FirstName))
-        {
-            Message = "Du skal skrive dit fornavn.";
-            return;
-        }
-        if (!validationService.IsValidName(LastName))
-        {
-            Message = "Du skal skrive dit efternavn.";
-            return;
-        }
-
-        if (!validationService.IsValidEmail(Email))
-        {
-            Message = "Du skal skrive en gyldig emailadresse.";
-            return;
-        }
-        if (!validationService.IsValidAddress(StreetAddress))
-        {
-            Message = "Du skal skrive vejnavn og husnummer.";
-            return;
-        }
-
-        if (!validationService.IsValidPostalCode(PostalCode))
-        {
-            Message = "Du skal skrive et gyldigt postnummer med 4 tal.";
-            return;
-        }
-
-        if (!validationService.IsValidCity(City))
-        {
-            Message = "Du skal skrive din by.";
-            return;
-        }
-
-        if (!validationService.IsValidPhoneNumber(PhoneNumber))
-        {
-            Message = "Du skal skrive et gyldigt telefonnummer.";
-            return;
-        }
-
-        if (!validationService.IsValidPassword(Password))
-        {
-            Message = "Dit password overholder ikke kravene.";
-            return;
-        }
-
-        if (Password != ConfirmPassword)
-        {
-            Message = "Dine passwords er ikke ens.";
-            return;
-        }
-
-        Message = "Alle oplysninger er godkendt. Brugeren er endnu ikke oprettet.";
-        await CreateUserAsync();
-        await m_cookieService.Create(Email, UserRole.Customer);
-    }
-
-    private async Task CreateUserAsync()
-    {
-        DateTime dateTime = DateTime.UtcNow;
-        DateOnly dateOnly = new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
-        User user = new()
-        {
-            FirstName = FirstName,
-            LastName = LastName,
-            Apartment = Apartment,
-            City = City,
-            Email = Email,
-            PhoneNumber = PhoneNumber,
-            PostalCode = PostalCode,
-            StreetAddress = StreetAddress,
-            RegisterDate = dateOnly
-        };
-
-        UserLogin userLogin = new()
-        {
-            PhcString = m_hashingService.HashPassword(Password)
-        };
-
-        try
-        {
-            await m_userService.CreateAsync(user, userLogin);
-        }
-        catch (Exception ex) when (ex is NpgsqlException || ex is SqlNullValueException || ex is DbException || ex is NotFoundException)
-        {
-            Message = "Intern system fejl du kan ikke oprette en bruger lige nu" + $"\n {ex.Message}";
-            Console.WriteLine($"\n\n{ex.Message}");
-        }
-    }
-
+        "first-name" => "Du skal skrive dit fornavn.",
+        "last-name" => "Du skal skrive dit efternavn.",
+        "email" => "Du skal skrive en gyldig emailadresse.",
+        "email-taken" => "Der findes allerede en konto med denne emailadresse.",
+        "address" => "Du skal skrive vejnavn og husnummer.",
+        "postal-code" => "Du skal skrive et gyldigt postnummer med 4 tal.",
+        "city" => "Du skal skrive din by.",
+        "phone" => "Du skal skrive et gyldigt telefonnummer.",
+        "password" => "Dit password overholder ikke kravene.",
+        "password-mismatch" => "Dine passwords er ikke ens.",
+        "failed" => "Der opstod en fejl. Du kan ikke oprette en bruger lige nu.",
+        _ => null
+    };
 }
