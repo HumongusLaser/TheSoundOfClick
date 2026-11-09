@@ -11,6 +11,26 @@ public class UserService(UserLoginRepository m_userLoginRepo, UserRepository m_u
         await m_userLoginRepo.CreateAsync(userLogin);
     }
 
+    public async Task CreateAdminAsync(Guid requestingAdminID, User user, UserLogin userLogin)
+    {
+        ArgumentNullException.ThrowIfNull(requestingAdminID);
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(userLogin);
+
+        User Admin = await GetByID(requestingAdminID);
+
+        if (Admin.Role != UserRole.Admin)
+        {
+            throw new RankException("An admin needs to do this action");
+        }
+
+        user.Role = UserRole.Admin;
+        user.DiscountRole = DiscountRole.Admin;
+        userLogin.UserID = await m_userRepo.CreateAsync(user);
+        user.ID = userLogin.UserID;
+        await m_userLoginRepo.CreateAsync(userLogin);
+    }
+
     public async Task<User> GetByEmail(string email)
     {
         return await m_userRepo.GetByEmail(email);
