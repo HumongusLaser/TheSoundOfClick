@@ -1,427 +1,367 @@
 ﻿@page "/manage-employees/admins"
 @rendermode InteractiveServer
-
 @using Microsoft.AspNetCore.Authorization
-
-
-@* @attribute [Authorize(Roles = "Admin")] *@
+@using System.Data.Common
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject ValidationService ValidationService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<ManageAdmins> Logger
 
 <PageTitle>Administrer admins</PageTitle>
 
 <div class="page-content">
-
     <h1>Administrer admins</h1>
+    <p class="page-description">Her kan du se alle administratorer.</p>
+    <NavLink class="page-button-outline mb-4" href="/manage-employees">← Tilbage</NavLink>
 
-    <p class="page-description">
-        Her kan du se og administrere alle administratorer.
-    </p>
-
-    <NavLink class="page-button-outline mb-4"
-             href="/manage-employees">
-        ← Tilbage
-    </NavLink>
-
- 
     <section class="employee-form-section">
-
         <h3>Alle administratorer</h3>
 
+        @if (!string.IsNullOrEmpty(LoadError))
+        {
+            <p class="text-danger" role="alert">@LoadError</p>
+        }
         <div class="table-responsive">
-
             <table class="table admin-table">
-
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Fornavn</th>
                         <th>Efternavn</th>
+                        <th>E-mail</th>
+                        <th>Telefon</th>
                         <th>Rolle</th>
                         <th>Handlinger</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    @foreach (var user in Admins.Where(u => u.Role == "Admin"))
-                    {
-                        <tr>
-                            <td>@user.Id</td>
-                            <td>@user.FirstName</td>
-                            <td>@user.LastName</td>
-                            <td>@user.Role</td>
-
-                            <td>
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-info me-2"
-                                        title="Rediger bruger"
-                                        @onclick="() => EditUser(user)">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger"
-                                        title="Slet bruger"
-                                        @onclick="() => DeleteUser(user)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    }
+                    <Virtualize TItem="User"
+                                ItemsProvider="LoadAdminsAsync"
+                                Context="admin"
+                                @ref="AdminVirtualize"
+                                MaxItemCount="30"
+                                SpacerElement="tr">
+                        <ItemContent>
+                            <tr>
+                                <td>@admin.ID</td>
+                                <td>@admin.FirstName</td>
+                                <td>@admin.LastName</td>
+                                <td>@admin.Email</td>
+                                <td>@admin.PhoneNumber</td>
+                                <td>@admin.Role</td>
+                                <td>
+                                    <button type="button" class="page-button-outline me-2"
+                                            @onclick="() => BeginEdit(admin)">Rediger</button>
+                                    <button type="button" class="page-button-outline"
+                                            @onclick="() => BeginDelete(admin)">Fjern</button>
+                                </td>
+                            </tr>
+                        </ItemContent>
+                        <Placeholder>
+                            <tr><td colspan="7">Indlæser administratorer...</td></tr>
+                        </Placeholder>
+                        <EmptyContent>
+                            <tr><td colspan="7">Der er ingen administratorer registreret.</td></tr>
+                        </EmptyContent>
+                    </Virtualize>
                 </tbody>
-
             </table>
-
         </div>
-
     </section>
-
-    @if (EditingUser is not null)
-    {
-        <div class="employee-modal-overlay">
-
-            <div class="employee-modal"
-                 role="dialog"
-                 aria-modal="true"
-                 aria-label="Rediger administrator">
-
-                <h2>Rediger administrator</h2>
-
-                <p class="page-description">
-                    Her kan du ændre brugerens oplysninger.
-                </p>
-
-                <h3>Personlige oplysninger</h3>
-
-                <div class="row g-3 mt-2">
-
-                    <div class="col-md-6">
-                        <label class="form-label">Fornavn</label>
-                        <input class="form-control"
-                               @bind="EditingUser.FirstName" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Efternavn</label>
-                        <input class="form-control"
-                               @bind="EditingUser.LastName" />
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label">E-mail</label>
-                        <input type="email"
-                               class="form-control"
-                               @bind="EditingUser.Email" />
-                    </div>
-
-                    <div class="col-md-8">
-                        <label class="form-label">Adresse</label>
-                        <input class="form-control"
-                               @bind="EditingUser.StreetAddress" />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label">Lejlighed (valgfrit)</label>
-                        <input class="form-control"
-                               @bind="EditingUser.Apartment" />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label">Postnummer</label>
-                        <input class="form-control"
-                               maxlength="4"
-                               @bind="EditingUser.PostalCode" />
-                    </div>
-
-                    <div class="col-md-8">
-                        <label class="form-label">By</label>
-                        <input class="form-control"
-                               @bind="EditingUser.City" />
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label">Telefonnummer</label>
-                        <input type="tel"
-                               class="form-control"
-                               maxlength="8"
-                               @bind="EditingUser.PhoneNumber" />
-                    </div>
-
-                </div>
-
-                <hr class="my-4" />
-
-                <h3>Brugerrolle</h3>
-
-                <div class="mb-4 mt-3">
-
-                    <label class="form-label">Rolle</label>
-
-                    <select class="form-select"
-                            @bind="EditingUser.Role">
-                        <option value="Admin">Admin</option>
-                        <option value="Employee">Employee</option>
-                    </select>
-
-                </div>
-
-                @if (!string.IsNullOrEmpty(EditError))
-                {
-                    <p class="text-danger" role="alert">
-                        @EditError
-                    </p>
-                }
-
-                <div class="d-flex flex-wrap gap-3 mt-4">
-
-                    <button type="button"
-                            class="page-button"
-                            @onclick="SaveChanges">
-                        Gem ændringer
-                    </button>
-
-                    <button type="button"
-                            class="page-button-outline"
-                            @onclick="CancelEdit">
-                        Annuller
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-    }
-
-    @if (DeletingUser is not null)
-    {
-        <div class="employee-modal-overlay">
-
-            <div class="employee-modal employee-delete-modal"
-                 role="dialog"
-                 aria-modal="true"
-                 aria-label="Bekræft sletning">
-
-                <div class="employee-delete-icon">
-                    <i class="bi bi-trash3"></i>
-                </div>
-
-                <h2>Slet administrator</h2>
-
-                <p class="employee-delete-description">
-                    Er du sikker på, at du vil slette
-                    <strong>
-                        @DeletingUser.FirstName @DeletingUser.LastName
-                    </strong>?
-                </p>
-
-                <p class="employee-delete-warning">
-                    Denne handling kan ikke fortrydes.
-                </p>
-
-                <div class="employee-delete-actions">
-
-                    <button type="button"
-                            class="page-button-outline"
-                            @onclick="CancelDelete">
-                        Annuller
-                    </button>
-
-                    <button type="button"
-                            class="employee-delete-button"
-                            @onclick="ConfirmDelete">
-                        Ja, slet bruger
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Message))
-    {
-        <p class="employee-form-message" role="status">
-            @Message
-        </p>
-    }
-
 </div>
 
+@if (EditingUser is not null)
+{
+    <div class="employee-modal-overlay">
+        <div class="employee-modal" role="dialog" aria-modal="true" aria-label="Rediger administrator">
+            <h2>Rediger administrator</h2>
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Fornavn</label>
+                    <input class="form-control" @bind="EditingUser.FirstName" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Efternavn</label>
+                    <input class="form-control" @bind="EditingUser.LastName" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">E-mail</label>
+                    <input type="email" class="form-control" @bind="EditingUser.Email" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Adresse</label>
+                    <input class="form-control" @bind="EditingUser.StreetAddress" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Lejlighed (valgfrit)</label>
+                    <input class="form-control" @bind="EditingUser.Apartment" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Postnummer</label>
+                    <input class="form-control" maxlength="4" @bind="EditingUser.PostalCode" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">By</label>
+                    <input class="form-control" @bind="EditingUser.City" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Telefonnummer</label>
+                    <input type="tel" class="form-control" maxlength="8" @bind="EditingUser.PhoneNumber" />
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(ActionMessage))
+            {
+                <p class="text-danger mt-3" role="alert">@ActionMessage</p>
+            }
+            <div class="d-flex flex-wrap gap-3 mt-4">
+                <button type="button" class="page-button" disabled="@IsSaving" @onclick="SaveEditAsync">
+                    @(IsSaving ? "Gemmer..." : "Gem ændringer")
+                </button>
+                <button type="button" class="page-button-outline" disabled="@IsSaving" @onclick="CancelEdit">
+                    Annuller
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (DeletingUser is not null)
+{
+    <div class="employee-modal-overlay">
+        <div class="employee-modal employee-delete-modal" role="dialog" aria-modal="true" aria-label="Bekræft fjernelse">
+            <h2>Fjern administrator</h2>
+            <p>Er du sikker på, at du vil fjerne <strong>@DeletingUser.FirstName @DeletingUser.LastName</strong>?</p>
+            <p class="employee-delete-warning">Denne handling kan ikke fortrydes. Den sidste administrator kan ikke fjernes.</p>
+            @if (!string.IsNullOrEmpty(ActionMessage))
+            {
+                <p class="text-danger" role="alert">@ActionMessage</p>
+            }
+            <div class="d-flex flex-wrap gap-3 mt-4">
+                <button type="button" class="page-button-outline" disabled="@IsSaving" @onclick="CancelDelete">Annuller</button>
+                <button type="button" class="employee-delete-button" disabled="@IsSaving" @onclick="ConfirmDeleteAsync">
+                    @(IsSaving ? "Fjerner..." : "Fjern administrator")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    private Virtualize<User>? AdminVirtualize;
+    private string? LoadError;
+    private StaffEditModel? EditingUser;
+    private User? DeletingUser;
+    private bool IsSaving;
+    private string? ActionMessage;
 
-    private List<AdminTestUser> Admins = new()
+    private void BeginEdit(User admin)
     {
-        new AdminTestUser
+        ActionMessage = null;
+        EditingUser = new StaffEditModel
         {
-            Id = "1001",
-            FirstName = "Peter",
-            LastName = "Hansen",
-            Email = "peter@example.com",
-            StreetAddress = "Hovedgaden 12",
-            Apartment = "",
-            PostalCode = "3600",
-            City = "Frederikssund",
-            PhoneNumber = "12345678",
-            Role = "Admin"
-        },
-
-        new AdminTestUser
-        {
-            Id = "1002",
-            FirstName = "Maria",
-            LastName = "Jensen",
-            Email = "maria@example.com",
-            StreetAddress = "Stationsvej 5",
-            Apartment = "2. tv.",
-            PostalCode = "3400",
-            City = "Hillerød",
-            PhoneNumber = "87654321",
-            Role = "Admin"
-        }
-    };
-
-    private string Message = "";
-    private string EditError = "";
-
-    private AdminTestUser? EditingUser;
-    private AdminTestUser? DeletingUser;
-
-
-    private void EditUser(AdminTestUser user)
-    {
-        Message = "";
-        EditError = "";
-
-        EditingUser = new AdminTestUser
-        {
-            Id = user.Id,
-            RegisterDate = user.RegisterDate,
-
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-
-            StreetAddress = user.StreetAddress,
-            Apartment = user.Apartment,
-            PostalCode = user.PostalCode,
-            City = user.City,
-            PhoneNumber = user.PhoneNumber,
-
-            Role = user.Role
+            ID = admin.ID,
+            RegisterDate = admin.RegisterDate,
+            FirstName = admin.FirstName,
+            LastName = admin.LastName,
+            Email = admin.Email,
+            StreetAddress = admin.StreetAddress,
+            Apartment = admin.Apartment,
+            PostalCode = admin.PostalCode,
+            City = admin.City,
+            PhoneNumber = admin.PhoneNumber
         };
     }
 
-    private void SaveChanges()
-    {
-        if (EditingUser is null)
-            return;
-
-        EditError = "";
-
-        if (string.IsNullOrWhiteSpace(EditingUser.FirstName) ||
-            string.IsNullOrWhiteSpace(EditingUser.LastName) ||
-            string.IsNullOrWhiteSpace(EditingUser.Email) ||
-            string.IsNullOrWhiteSpace(EditingUser.StreetAddress) ||
-            string.IsNullOrWhiteSpace(EditingUser.PostalCode) ||
-            string.IsNullOrWhiteSpace(EditingUser.City) ||
-            string.IsNullOrWhiteSpace(EditingUser.PhoneNumber))
-        {
-            EditError = "Alle obligatoriske felter skal udfyldes.";
-            return;
-        }
-
-        if (EditingUser.PostalCode.Length != 4 ||
-            !EditingUser.PostalCode.All(char.IsDigit))
-        {
-            EditError = "Postnummer skal bestå af 4 cifre.";
-            return;
-        }
-
-        if (EditingUser.PhoneNumber.Length != 8 ||
-            !EditingUser.PhoneNumber.All(char.IsDigit))
-        {
-            EditError = "Telefonnummer skal bestå af 8 cifre.";
-            return;
-        }
-
-        var originalUser = Admins.FirstOrDefault(
-            u => u.Id == EditingUser.Id
-        );
-
-        if (originalUser is null)
-        {
-            EditError = "Brugeren blev ikke fundet.";
-            return;
-        }
-
-        originalUser.FirstName = EditingUser.FirstName;
-        originalUser.LastName = EditingUser.LastName;
-        originalUser.Email = EditingUser.Email;
-
-        originalUser.StreetAddress = EditingUser.StreetAddress;
-        originalUser.Apartment = EditingUser.Apartment;
-        originalUser.PostalCode = EditingUser.PostalCode;
-        originalUser.City = EditingUser.City;
-        originalUser.PhoneNumber = EditingUser.PhoneNumber;
-
-        originalUser.Role = EditingUser.Role;
-
-        EditingUser = null;
-
-        Message = "Brugerens oplysninger er opdateret midlertidigt.";
-    }
     private void CancelEdit()
     {
         EditingUser = null;
-        EditError = "";
-        Message = "";
+        ActionMessage = null;
     }
 
-    private void DeleteUser(AdminTestUser user)
+    private async Task SaveEditAsync()
     {
-        Message = "";
-        DeletingUser = user;
-    }
-
-    private void ConfirmDelete()
-    {
-        if (DeletingUser is null)
+        if (EditingUser is null)
+        {
             return;
+        }
 
-        string name = $"{DeletingUser.FirstName} {DeletingUser.LastName}";
+        EditingUser.FirstName = EditingUser.FirstName.Trim();
+        EditingUser.LastName = EditingUser.LastName.Trim();
+        EditingUser.Email = EditingUser.Email.Trim();
+        EditingUser.StreetAddress = EditingUser.StreetAddress.Trim();
+        EditingUser.Apartment = EditingUser.Apartment?.Trim();
+        EditingUser.PostalCode = EditingUser.PostalCode.Trim();
+        EditingUser.City = EditingUser.City.Trim();
+        EditingUser.PhoneNumber = EditingUser.PhoneNumber.Trim();
 
-        Admins.Remove(DeletingUser);
+        if (!ValidationService.IsValidName(EditingUser.FirstName) ||
+            !ValidationService.IsValidName(EditingUser.LastName) ||
+            !ValidationService.IsValidEmail(EditingUser.Email) ||
+            !ValidationService.IsValidAddress(EditingUser.StreetAddress) ||
+            !ValidationService.IsValidPostalCode(EditingUser.PostalCode) ||
+            !ValidationService.IsValidCity(EditingUser.City) ||
+            !ValidationService.IsValidPhoneNumber(EditingUser.PhoneNumber))
+        {
+            ActionMessage = "Kontrollér oplysningerne. Alle felter undtagen lejlighed skal være gyldige.";
+            return;
+        }
 
-        DeletingUser = null;
-
-        Message = $"{name} er fjernet fra testlisten.";
+        Guid adminId = EditingUser.ID;
+        IsSaving = true;
+        try
+        {
+            Guid requestingUserId = await GetRequestingUserIdAsync();
+            User updatedUser = new()
+            {
+                ID = adminId,
+                RegisterDate = EditingUser.RegisterDate,
+                FirstName = EditingUser.FirstName,
+                LastName = EditingUser.LastName,
+                Email = EditingUser.Email,
+                StreetAddress = EditingUser.StreetAddress,
+                Apartment = string.IsNullOrWhiteSpace(EditingUser.Apartment) ? null : EditingUser.Apartment,
+                PostalCode = EditingUser.PostalCode,
+                City = EditingUser.City,
+                PhoneNumber = EditingUser.PhoneNumber,
+                Role = UserRole.Admin
+            };
+            await UserService.UpdateStaffAsync(requestingUserId, updatedUser, UserRole.Admin);
+            EditingUser = null;
+            await RefreshListAsync();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ActionMessage = "Kun en administrator kan redigere administratorer.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            ActionMessage = exception.Message;
+        }
+        catch (NotFoundException)
+        {
+            ActionMessage = "Administratoren blev ikke fundet. Genindlæs listen.";
+        }
+        catch (Exception exception) when (exception is DbException or FormatException)
+        {
+            Logger.LogError(exception, "Could not update administrator {AdminId}.", adminId);
+            ActionMessage = "Administratoren kunne ikke opdateres.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
+    private void BeginDelete(User admin)
+    {
+        ActionMessage = null;
+        DeletingUser = admin;
+    }
 
     private void CancelDelete()
     {
         DeletingUser = null;
+        ActionMessage = null;
     }
 
-    private class AdminTestUser
+    private async Task ConfirmDeleteAsync()
     {
-        public string Id { get; set; } = "";
+        if (DeletingUser is null)
+        {
+            return;
+        }
 
-        public DateOnly RegisterDate { get; set; }  = DateOnly.FromDateTime(DateTime.Today);
+        Guid adminId = DeletingUser.ID;
+        IsSaving = true;
+        try
+        {
+            Guid requestingUserId = await GetRequestingUserIdAsync();
+            await UserService.DeleteStaffAsync(requestingUserId, adminId, UserRole.Admin);
+            DeletingUser = null;
+            await RefreshListAsync();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ActionMessage = "Kun en administrator kan fjerne administratorer.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            ActionMessage = exception.Message;
+        }
+        catch (NotFoundException)
+        {
+            ActionMessage = "Administratoren blev ikke fundet. Genindlæs listen.";
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not delete administrator {AdminId}.", adminId);
+            ActionMessage = "Administratoren kunne ikke fjernes. Kontoen kan være knyttet til andre data.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
 
+    private async Task<Guid> GetRequestingUserIdAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!Guid.TryParse(
+                authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                out Guid requestingUserId))
+        {
+            throw new UnauthorizedAccessException("An authenticated administrator is required.");
+        }
+
+        return requestingUserId;
+    }
+
+    private async Task RefreshListAsync()
+    {
+        ActionMessage = null;
+        if (AdminVirtualize is not null)
+        {
+            await AdminVirtualize.RefreshDataAsync();
+        }
+    }
+
+    private sealed class StaffEditModel
+    {
+        public Guid ID { get; set; }
+        public DateOnly RegisterDate { get; set; }
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";
-
         public string Email { get; set; } = "";
-
         public string StreetAddress { get; set; } = "";
-        public string Apartment { get; set; } = "";
-
+        public string? Apartment { get; set; }
         public string PostalCode { get; set; } = "";
         public string City { get; set; } = "";
-
         public string PhoneNumber { get; set; } = "";
+    }
 
-        public string Role { get; set; } = "Admin";
+    private async ValueTask<ItemsProviderResult<User>> LoadAdminsAsync(ItemsProviderRequest request)
+    {
+        try
+        {
+            (List<User> admins, int totalCount) = await UserService.GetUsersByRolePageAsync(
+                UserRole.Admin,
+                request.StartIndex,
+                Math.Min(request.Count, 30),
+                request.CancellationToken);
+            LoadError = null;
+            return new ItemsProviderResult<User>(admins, totalCount);
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is DbException or InvalidOperationException or FormatException)
+        {
+            Logger.LogError(exception, "Could not load a page of administrators.");
+            LoadError = "Administratorlisten kunne ikke indlæses. Prøv igen.";
+            await InvokeAsync(StateHasChanged);
+            return new ItemsProviderResult<User>([], 0);
+        }
     }
 }

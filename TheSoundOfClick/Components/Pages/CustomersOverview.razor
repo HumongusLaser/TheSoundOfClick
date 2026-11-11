@@ -1,0 +1,416 @@
+﻿@page "/customers"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Data.Common
+@attribute [Authorize(Roles = "Employee,Admin")]
+@inject UserService UserService
+@inject OrderService OrderService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<CustomersOverview> Logger
+
+<PageTitle>Oversigt over kunder | The Sound Of Click</PageTitle>
+
+<div class="page-content customer-overview-page">
+    <h1>Oversigt over kunder</h1>
+    <p class="page-description">Kundeoplysninger fra databasen.</p>
+
+    @if (!string.IsNullOrEmpty(LoadError))
+    {
+        <p class="text-danger" role="alert">@LoadError</p>
+    }
+    @if (!string.IsNullOrEmpty(ActionMessage))
+    {
+        <p class="text-success" role="status">@ActionMessage</p>
+    }
+
+    <section class="employee-form-section customer-overview-section">
+        <h3>Kunder</h3>
+        <div class="table-responsive customer-overview-scroll">
+            <table class="table admin-table customer-overview-table">
+                <thead>
+                    <tr>
+                        <th>Registreret</th>
+                        <th>Fornavn</th>
+                        <th>Efternavn</th>
+                        <th>E-mail</th>
+                        <th>Telefon</th>
+                        <th>Adresse</th>
+                        <th>Postnummer</th>
+                        <th>By</th>
+                        <th>Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Virtualize TItem="User"
+                                ItemsProvider="LoadCustomersAsync"
+                                Context="customer"
+                                @ref="CustomerVirtualize"
+                                MaxItemCount="30"
+                                OverscanCount="0"
+                                SpacerElement="tr">
+                        <ItemContent>
+                            <tr>
+                                <td>@customer.RegisterDate.ToString("dd-MM-yyyy")</td>
+                                <td>@customer.FirstName</td>
+                                <td>@customer.LastName</td>
+                                <td>@customer.Email</td>
+                                <td>@customer.PhoneNumber</td>
+                                <td>
+                                    @customer.StreetAddress
+                                    @if (!string.IsNullOrWhiteSpace(customer.Apartment))
+                                    {
+                                        <span>, @customer.Apartment</span>
+                                    }
+                                </td>
+                                <td>@customer.PostalCode</td>
+                                <td>@customer.City</td>
+                                <td>
+                                    <AuthorizeView Roles="Employee,Admin">
+                                        <Authorized>
+                                            <button type="button"
+                                                    class="page-button-outline customer-orders-trigger"
+                                                    disabled="@IsLoadingCustomerOrders"
+                                                    @onclick="() => ShowCustomerOrdersAsync(customer)">
+                                                <i class="bi bi-receipt" aria-hidden="true"></i>
+                                                Ordrer
+                                            </button>
+                                        </Authorized>
+                                    </AuthorizeView>
+                                    <AuthorizeView Roles="Admin">
+                                        <Authorized>
+                                            <button type="button"
+                                                    class="page-button-outline customer-delete-trigger"
+                                                    disabled="@(!CanDeleteCustomer(customer))"
+                                                    title="@(CanDeleteCustomer(customer)
+                                                        ? "Slet denne kunde"
+                                                        : $"Sletning er mulig fra {customer.RegisterDate.AddDays(31):dd-MM-yyyy}")"
+                                                    @onclick="() => BeginDelete(customer)">
+                                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                                Slet
+                                            </button>
+                                            @if (!CanDeleteCustomer(customer))
+                                            {
+                                                <span class="customer-delete-hint">
+                                                    Mulig fra @customer.RegisterDate.AddDays(31).ToString("dd-MM-yyyy")
+                                                </span>
+                                            }
+                                        </Authorized>
+                                    </AuthorizeView>
+                                </td>
+                            </tr>
+                        </ItemContent>
+                        <Placeholder>
+                            <tr><td colspan="9">Indlæser kunder...</td></tr>
+                        </Placeholder>
+                        <EmptyContent>
+                            <tr><td colspan="9">Der er ingen kunder registreret.</td></tr>
+                        </EmptyContent>
+                    </Virtualize>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@if (CustomerToDelete is not null)
+{
+    <div class="employee-modal-overlay">
+        <div class="employee-modal employee-delete-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="delete-customer-title">
+            <div class="employee-delete-icon">
+                <i class="bi bi-trash3" aria-hidden="true"></i>
+            </div>
+            <h2 id="delete-customer-title">Slet kunde</h2>
+            <p class="employee-delete-description">
+                Er du sikker på, at du vil slette
+                <strong>@CustomerToDelete.FirstName @CustomerToDelete.LastName</strong>?
+            </p>
+            <p class="employee-delete-warning">Denne handling kan ikke fortrydes.</p>
+            @if (!string.IsNullOrEmpty(DeleteError))
+            {
+                <p class="text-danger" role="alert">@DeleteError</p>
+            }
+            <div class="employee-delete-actions">
+                <button type="button"
+                        class="page-button-outline"
+                        disabled="@IsDeleting"
+                        @onclick="CancelDelete">
+                    Annuller
+                </button>
+                <button type="button"
+                        class="employee-delete-button"
+                        disabled="@IsDeleting"
+                        @onclick="ConfirmDeleteAsync">
+                    @(IsDeleting ? "Sletter..." : "Ja, slet kunde")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (CustomerOrdersCustomer is not null)
+{
+    <div class="employee-modal-overlay">
+        <div class="employee-modal customer-orders-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="customer-orders-title">
+            <div class="customer-orders-heading">
+                <div class="employee-delete-icon customer-orders-icon">
+                    <i class="bi bi-receipt" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <h2 id="customer-orders-title">Kundens ordrer</h2>
+                    <p>@CustomerOrdersCustomer.FirstName @CustomerOrdersCustomer.LastName</p>
+                </div>
+                <button type="button"
+                        class="customer-orders-close"
+                        aria-label="Luk"
+                        @onclick="CloseCustomerOrders">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            @if (IsLoadingCustomerOrders)
+            {
+                <div class="profile-orders-loading" role="status">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    Henter ordrer...
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(CustomerOrdersError))
+            {
+                <p class="text-danger" role="alert">@CustomerOrdersError</p>
+            }
+            else if (CustomerOrders.Count == 0)
+            {
+                <div class="profile-orders-empty">
+                    <i class="bi bi-bag" aria-hidden="true"></i>
+                    <strong>Kunden har ingen ordrer endnu</strong>
+                    <span>Gennemførte køb vises her.</span>
+                </div>
+            }
+            else
+            {
+                <div class="customer-orders-list">
+                    @foreach (OrderHistoryEntry order in CustomerOrders)
+                    {
+                        <article class="customer-order-card">
+                            <header>
+                                <div>
+                                    <strong>Ordre #@order.ID.ToString("N")[..8].ToUpperInvariant()</strong>
+                                    <span>@order.DateCreated.ToLocalTime().ToString("dd-MM-yyyy 'kl.' HH:mm")</span>
+                                </div>
+                                <div class="customer-order-summary">
+                                    <span class="profile-order-status">@FormatOrderStatus(order.Status)</span>
+                                    <strong>@order.TotalPrice.ToString("N2") kr.</strong>
+                                </div>
+                            </header>
+                            <div class="table-responsive">
+                                <table class="table profile-order-items">
+                                    <thead>
+                                        <tr>
+                                            <th>Produkt</th>
+                                            <th>Antal</th>
+                                            <th>Stykpris</th>
+                                            <th>Beløb</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (OrderHistoryItem item in order.Items)
+                                        {
+                                            <tr>
+                                                <td>@item.ProductName</td>
+                                                <td>@item.Quantity</td>
+                                                <td>@item.UnitPrice.ToString("N2") kr.</td>
+                                                <td>@((item.UnitPrice * item.Quantity).ToString("N2")) kr.</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="customer-order-address">
+                                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                                @order.ShippingAddress
+                            </p>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private Virtualize<User>? CustomerVirtualize;
+    private string? LoadError;
+    private User? CustomerToDelete;
+    private string? DeleteError;
+    private string? ActionMessage;
+    private bool IsDeleting;
+    private User? CustomerOrdersCustomer;
+    private List<OrderHistoryEntry> CustomerOrders = [];
+    private string? CustomerOrdersError;
+    private bool IsLoadingCustomerOrders;
+
+    private static bool CanDeleteCustomer(User customer) =>
+        customer.RegisterDate < DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+
+    private void BeginDelete(User customer)
+    {
+        CustomerToDelete = customer;
+        DeleteError = null;
+        ActionMessage = null;
+    }
+
+    private void CancelDelete()
+    {
+        CustomerToDelete = null;
+        DeleteError = null;
+    }
+
+    private async Task ShowCustomerOrdersAsync(User customer)
+    {
+        CustomerOrdersCustomer = customer;
+        CustomerOrders = [];
+        CustomerOrdersError = null;
+        IsLoadingCustomerOrders = true;
+
+        try
+        {
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!Guid.TryParse(
+                    authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    out Guid requestingUserId))
+            {
+                throw new UnauthorizedAccessException("A staff member must be signed in.");
+            }
+
+            CustomerOrders = await OrderService.GetCustomerOrderHistoryForStaffAsync(
+                requestingUserId,
+                customer.ID);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            CustomerOrdersError = "Kun medarbejdere og administratorer kan se kundeordrer.";
+        }
+        catch (NotFoundException)
+        {
+            CustomerOrdersError = "Kunden eller din medarbejderkonto blev ikke fundet.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            CustomerOrdersError = exception.Message;
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not load orders for customer {CustomerId}.", customer.ID);
+            CustomerOrdersError = "Kundens ordrer kunne ikke indlæses. Prøv igen.";
+        }
+        finally
+        {
+            IsLoadingCustomerOrders = false;
+        }
+    }
+
+    private void CloseCustomerOrders()
+    {
+        CustomerOrdersCustomer = null;
+        CustomerOrders = [];
+        CustomerOrdersError = null;
+    }
+
+    private static string FormatOrderStatus(string status) =>
+        status switch
+        {
+            "Placed" => "Modtaget",
+            "Processing" => "Behandles",
+            "Shipped" => "Afsendt",
+            "Completed" => "Afsluttet",
+            "Cancelled" => "Annulleret",
+            _ => status
+        };
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (CustomerToDelete is null)
+        {
+            return;
+        }
+
+        Guid customerId = CustomerToDelete.ID;
+        IsDeleting = true;
+        DeleteError = null;
+
+        try
+        {
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!Guid.TryParse(
+                    authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    out Guid requestingUserId))
+            {
+                throw new UnauthorizedAccessException("An administrator must be signed in.");
+            }
+
+            string customerName = $"{CustomerToDelete.FirstName} {CustomerToDelete.LastName}";
+            await UserService.DeleteCustomerAsync(requestingUserId, customerId);
+            ActionMessage = $"{customerName} blev slettet.";
+            CustomerToDelete = null;
+
+            if (CustomerVirtualize is not null)
+            {
+                await CustomerVirtualize.RefreshDataAsync();
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            DeleteError = "Kun en administrator kan slette kunder.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            DeleteError = exception.Message;
+        }
+        catch (NotFoundException)
+        {
+            DeleteError = "Kunden blev ikke fundet. Genindlæs kundeoversigten.";
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not delete customer {CustomerId}.", customerId);
+            DeleteError = "Kunden kunne ikke slettes. Kontoen kan være knyttet til andre data.";
+        }
+        finally
+        {
+            IsDeleting = false;
+        }
+    }
+
+    private async ValueTask<ItemsProviderResult<User>> LoadCustomersAsync(ItemsProviderRequest request)
+    {
+        try
+        {
+            (List<User> customers, int totalCount) = await UserService.GetUsersByRolePageAsync(
+                UserRole.Customer,
+                request.StartIndex,
+                Math.Min(request.Count, 30),
+                request.CancellationToken);
+
+            LoadError = null;
+            return new ItemsProviderResult<User>(customers, totalCount);
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is DbException or InvalidOperationException or FormatException)
+        {
+            Logger.LogError(exception, "Could not load a page of customers.");
+            LoadError = "Kundeoversigten kunne ikke indlæses. Prøv igen.";
+            await InvokeAsync(StateHasChanged);
+            return new ItemsProviderResult<User>([], 0);
+        }
+    }
+}

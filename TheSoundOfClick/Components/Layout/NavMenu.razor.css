@@ -141,6 +141,42 @@
     gap: 25px;
 }
 
+.logout-form {
+    display: flex;
+    margin: 0;
+}
+
+.logout-button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 17px;
+    border: 1px solid rgba(0, 217, 255, 0.55);
+    border-radius: 10px;
+    background: linear-gradient(120deg, rgba(0, 217, 255, 0.12), rgba(146, 59, 255, 0.15));
+    color: #e8faff;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 650;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.logout-button i {
+    color: #00d9ff;
+    font-size: 1.15rem;
+}
+
+.logout-button:hover {
+    transform: translateY(-2px);
+    border-color: #923bff;
+    background: linear-gradient(120deg, rgba(0, 217, 255, 0.22), rgba(146, 59, 255, 0.28));
+    box-shadow: 0 0 18px rgba(0, 217, 255, 0.18);
+    color: white;
+}
+
     .navbar-actions ::deep .nav-link {
         display: flex;
         align-items: center;

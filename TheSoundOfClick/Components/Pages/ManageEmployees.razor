@@ -3,7 +3,7 @@
 
 @using Microsoft.AspNetCore.Authorization
 
-@* @attribute [Authorize(Roles = "Admin")] *@
+@attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Administrer medarbejdere</PageTitle>
 
@@ -93,11 +93,16 @@
 
     </div>
 
-    <div class="mb-4">
+    <div class="d-flex flex-wrap gap-3 mb-4">
 
         <NavLink class="page-button"
                  href="/manage-employees/create">
             + Opret medarbejder
+        </NavLink>
+
+        <NavLink class="page-button-outline"
+                 href="/manage-employees/create-admin">
+            + Opret admin
         </NavLink>
 
     </div>

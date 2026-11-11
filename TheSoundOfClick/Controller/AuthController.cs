@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Data.Common;
 using System.Data.SqlTypes;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TheSoundOfClick;
 
@@ -22,7 +23,13 @@ public class AuthController : ControllerBase
         }
         catch (NotFoundException)
         {
-            return LocalRedirect("/login?error=invalid");
+            string failureUrl = "/login?error=invalid";
+            if (Url.IsLocalUrl(request.ReturnUrl))
+            {
+                failureUrl += $"&returnUrl={Uri.EscapeDataString(request.ReturnUrl)}";
+            }
+
+            return LocalRedirect(failureUrl);
         }
 
         var claims = new List<Claim>
@@ -39,7 +46,51 @@ public class AuthController : ControllerBase
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
 
+        return Url.IsLocalUrl(request.ReturnUrl)
+            ? LocalRedirect(request.ReturnUrl!)
+            : LocalRedirect("/");
+    }
+
+    [HttpPost("signout")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return LocalRedirect("/");
+    }
+
+    [Authorize]
+    [HttpPost("delete-account")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteOwnAccount(
+        [FromServices] UserService userService,
+        [FromServices] ILogger<AuthController> logger)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+        {
+            return LocalRedirect("/profile?accountDelete=not-allowed");
+        }
+
+        try
+        {
+            await userService.DeleteOwnCustomerAccountAsync(userId, userId);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return LocalRedirect("/");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return LocalRedirect("/profile?accountDelete=not-allowed");
+        }
+        catch (NotFoundException)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return LocalRedirect("/");
+        }
+        catch (DbException exception)
+        {
+            logger.LogError(exception, "Could not delete customer account {UserId}.", userId);
+            return LocalRedirect("/profile?accountDelete=failed");
+        }
     }
 
     [HttpPost("register")]
@@ -124,6 +175,7 @@ public class SignInRequest
 {
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
+    public string? ReturnUrl { get; set; }
 }
 
 public class RegistrationRequest

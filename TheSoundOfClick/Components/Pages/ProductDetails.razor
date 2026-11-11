@@ -2,6 +2,8 @@
 @using System.Reflection
 @rendermode InteractiveServer
 @inject ProductService ProductService
+@inject CartService CartService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Produktdetaljer | The Sound Of Click</PageTitle>
 
@@ -78,22 +80,49 @@
                                 Antal
                             </label>
 
-                            <input type="number"
-                                   class="form-control"
-                                   min="1"
-                                   max="@product.Stock"
-                                   @bind="Quantity"
-                                   disabled="@(product.Stock <= 0)" />
+                            <div class="input-group" style="max-width: 12rem;">
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        aria-label="Reducer antal"
+                                        disabled="@(product.Stock <= 0 || Quantity <= 1)"
+                                        @onclick="DecreaseQuantity">
+                                    −
+                                </button>
+                                <input type="number"
+                                       class="form-control text-center"
+                                       min="1"
+                                       max="@product.Stock"
+                                       @bind="Quantity"
+                                       @bind:event="oninput"
+                                       disabled="@(product.Stock <= 0)" />
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        aria-label="Forøg antal"
+                                        disabled="@(product.Stock <= 0 || Quantity >= product.Stock)"
+                                        @onclick="IncreaseQuantity">
+                                    +
+                                </button>
+                            </div>
 
                         </div>
 
                         <!-- Læg i kurv -->
                         <button type="button"
                                 class="page-button product-add-to-cart"
-                                disabled="@(product.Stock <= 0)">
+                                disabled="@(product.Stock <= 0)"
+                                @onclick="AddToCartAsync">
                             <i class="bi bi-cart-plus"></i>
                             Læg i kurv
                         </button>
+
+                        @if (!string.IsNullOrEmpty(CartMessage))
+                        {
+                            <p class="text-success mt-2" role="status">@CartMessage</p>
+                        }
+                        @if (!string.IsNullOrEmpty(CartError))
+                        {
+                            <p class="text-danger mt-2" role="alert">@CartError</p>
+                        }
 
                     </div>
 
@@ -179,6 +208,8 @@
     private Product? product;
 
     private int Quantity = 1;
+    private string? CartMessage;
+    private string? CartError;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -200,7 +231,61 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/");
+        string overviewPath = product switch
+        {
+            Keyboard => "/keyboards",
+            Mousepad => "/mousepads",
+            Keycap => "/keycaps",
+            _ => "/"
+        };
+
+        Navigation.NavigateTo(overviewPath);
+    }
+
+    private async Task AddToCartAsync()
+    {
+        if (product is null)
+        {
+            return;
+        }
+
+        CartMessage = null;
+        CartError = null;
+
+        if (Quantity < 1 || Quantity > product.Stock)
+        {
+            CartError = $"Vælg et antal mellem 1 og {product.Stock}.";
+            return;
+        }
+
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!Guid.TryParse(
+            authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out Guid userId))
+        {
+            string returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+            Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+            return;
+        }
+
+        await CartService.AddToCartAsync(product.ID, userId, Quantity);
+        CartMessage = $"{Quantity} stk. {product.Name} blev lagt i kurven.";
+    }
+
+    private void DecreaseQuantity()
+    {
+        if (Quantity > 1)
+        {
+            Quantity--;
+        }
+    }
+
+    private void IncreaseQuantity()
+    {
+        if (product is not null && Quantity < product.Stock)
+        {
+            Quantity++;
+        }
     }
 
     [Inject]

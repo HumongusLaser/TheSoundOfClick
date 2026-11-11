@@ -60,13 +60,21 @@ using (JsonDocument secretJson = JsonDocument.Parse(secretFile))
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton(Argon2Parameters.CreateHighSecurity());
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<DiscountRepository>();
 builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<CartRepository>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserLoginRepository>();
+builder.Services.AddScoped<PasswordResetRepository>();
+builder.Services.AddScoped<PasswordResetEmailSender>();
+builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<HashingService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ValidationService>();
 builder.Services.AddScoped<CookieService>();
 builder.Services.AddScoped(sp => new HttpClient());
 // Add services to the container.

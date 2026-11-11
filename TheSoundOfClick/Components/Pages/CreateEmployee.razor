@@ -1,158 +1,108 @@
 ﻿@page "/manage-employees/create"
 @rendermode InteractiveServer
-
 @using Microsoft.AspNetCore.Authorization
-@* @attribute [Authorize(Roles = "Admin")]
- *@
+@using Npgsql
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject ValidationService ValidationService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<CreateEmployee> Logger
+@inject NavigationManager Navigation
+
 <PageTitle>Opret medarbejder</PageTitle>
 
 <div class="page-content">
-
     <h1>Opret medarbejder</h1>
-
-    <p class="page-description">
-        Udfyld oplysningerne for at oprette en medarbejder eller administrator.
-    </p>
-
+    <p class="page-description">Udfyld oplysningerne for at oprette en medarbejder.</p>
     <hr />
 
-  
     <section class="employee-form-section">
-
-        <h3>Brugerrolle</h3>
-
-        <p class="employee-form-help">
-            Vælg hvilke rettigheder brugeren skal have.
-        </p>
-
-        <div class="row mt-3">
-            <div class="col-md-6">
-
-                <label class="form-label">Vælg rolle</label>
-
-                <select class="form-select" @bind="SelectedRole">
-                    <option value="Employee">Employee</option>
-                    <option value="Admin">Admin</option>
-                </select>
-
-            </div>
-        </div>
-
-    </section>
-
-    <section class="employee-form-section">
-
         <h3>Personlige oplysninger</h3>
-
         <div class="row g-3 mt-2">
-
             <div class="col-md-6">
                 <label class="form-label">Fornavn</label>
-                <input class="form-control"
-                       @bind="FirstName" />
+                <input class="form-control" @bind="FirstName" />
             </div>
-
             <div class="col-md-6">
                 <label class="form-label">Efternavn</label>
-                <input class="form-control"
-                       @bind="LastName" />
+                <input class="form-control" @bind="LastName" />
             </div>
-
             <div class="col-12">
                 <label class="form-label">E-mail</label>
-                <input type="email"
-                       class="form-control"
-                       @bind="Email" />
+                <input type="email" class="form-control" @bind="Email" />
             </div>
-
             <div class="col-md-8">
                 <label class="form-label">Adresse</label>
-                <input class="form-control"
-                       @bind="StreetAddress" />
+                <input class="form-control" @bind="StreetAddress" />
             </div>
-
             <div class="col-md-4">
                 <label class="form-label">Lejlighed (valgfrit)</label>
-                <input class="form-control"
-                       @bind="Apartment" />
+                <input class="form-control" @bind="Apartment" />
             </div>
-
             <div class="col-md-4">
                 <label class="form-label">Postnummer</label>
-                <input class="form-control"
-                       maxlength="4"
-                       @bind="PostalCode" />
+                <input class="form-control" maxlength="4" @bind="PostalCode" />
             </div>
-
             <div class="col-md-8">
                 <label class="form-label">By</label>
-                <input class="form-control"
-                       @bind="City" />
+                <input class="form-control" @bind="City" />
             </div>
-
             <div class="col-12">
                 <label class="form-label">Telefonnummer</label>
-                <input type="tel"
-                       class="form-control"
-                       maxlength="8"
-                       @bind="PhoneNumber" />
+                <input type="tel" class="form-control" maxlength="8" @bind="PhoneNumber" />
             </div>
-
         </div>
-
     </section>
 
     <section class="employee-form-section">
-
         <h3>Loginoplysninger</h3>
-
         <div class="row g-3 mt-2">
-
             <div class="col-md-6">
                 <label class="form-label">Password</label>
-                <input type="password"
-                       class="form-control"
-                       @bind="Password" />
+                <input type="password" class="form-control" @bind="Password" />
+                <small class="form-text">Mindst 16 tegn, 2 store bogstaver, 2 tal og 2 specialtegn.</small>
             </div>
-
             <div class="col-md-6">
                 <label class="form-label">Bekræft password</label>
-                <input type="password"
-                       class="form-control"
-                       @bind="ConfirmPassword" />
+                <input type="password" class="form-control" @bind="ConfirmPassword" />
             </div>
-
         </div>
-
     </section>
 
-
     <div class="d-flex flex-wrap gap-3 mt-4">
-
         <button type="button"
                 class="page-button"
-                @onclick="CreateUser">
-            Opret bruger
+                disabled="@IsSubmitting"
+                @onclick="CreateEmployeeAsync">
+            @(IsSubmitting ? "Opretter..." : "Opret medarbejder")
         </button>
-
-        <NavLink class="page-button-outline"
-                 href="/manage-employees">
-            Annuller
-        </NavLink>
-
+        <NavLink class="page-button-outline" href="/manage-employees">Annuller</NavLink>
     </div>
 
     @if (!string.IsNullOrEmpty(Message))
     {
-        <p class="employee-form-message" role="status">
-            @Message
-        </p>
+        <p class="employee-form-message" role="status">@Message</p>
     }
-
 </div>
 
-@code {
+@if (ShowSuccessPopup)
+{
+    <div class="profile-modal-overlay">
+        <div class="profile-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="employee-created-title">
+            <h2 id="employee-created-title">Medarbejder er oprettet</h2>
+            <div class="profile-modal-actions">
+                <button type="button" class="page-button" @onclick="GoHome">
+                    Gå til forsiden
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
+@code {
     private string FirstName = "";
     private string LastName = "";
     private string Email = "";
@@ -161,23 +111,53 @@
     private string PostalCode = "";
     private string City = "";
     private string PhoneNumber = "";
-
     private string Password = "";
     private string ConfirmPassword = "";
-
-    private string SelectedRole = "Employee";
-
     private string Message = "";
+    private bool IsSubmitting;
+    private bool ShowSuccessPopup;
 
-    private void CreateUser()
+    private async Task CreateEmployeeAsync()
     {
         Message = "";
 
         if (string.IsNullOrWhiteSpace(FirstName) ||
             string.IsNullOrWhiteSpace(LastName) ||
-            string.IsNullOrWhiteSpace(Email))
+            string.IsNullOrWhiteSpace(Email) ||
+            string.IsNullOrWhiteSpace(StreetAddress) ||
+            string.IsNullOrWhiteSpace(PostalCode) ||
+            string.IsNullOrWhiteSpace(City) ||
+            string.IsNullOrWhiteSpace(PhoneNumber))
         {
-            Message = "Udfyld venligst alle obligatoriske felter.";
+            Message = "Udfyld alle obligatoriske felter.";
+            return;
+        }
+
+        if (!ValidationService.IsValidName(FirstName) ||
+            !ValidationService.IsValidName(LastName))
+        {
+            Message = "Fornavn og efternavn skal være gyldige.";
+            return;
+        }
+
+        if (!ValidationService.IsValidEmail(Email))
+        {
+            Message = "Indtast en gyldig e-mailadresse.";
+            return;
+        }
+
+        if (!ValidationService.IsValidAddress(StreetAddress) ||
+            !ValidationService.IsValidPostalCode(PostalCode) ||
+            !ValidationService.IsValidCity(City) ||
+            !ValidationService.IsValidPhoneNumber(PhoneNumber))
+        {
+            Message = "Kontrollér adresse, postnummer, by og telefonnummer.";
+            return;
+        }
+
+        if (!ValidationService.IsValidPassword(Password))
+        {
+            Message = "Password opfylder ikke kravene.";
             return;
         }
 
@@ -187,6 +167,71 @@
             return;
         }
 
-        Message = "Formularen er udfyldt. Databaseoprettelse er endnu ikke implementeret.";
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!Guid.TryParse(
+                authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                out Guid requestingUserId))
+        {
+            Message = "Kun en administrator kan oprette medarbejdere.";
+            return;
+        }
+
+        DateTime now = DateTime.UtcNow;
+        var employee = new User
+        {
+            RegisterDate = new DateOnly(now.Year, now.Month, now.Day),
+            FirstName = FirstName.Trim(),
+            LastName = LastName.Trim(),
+            Email = Email.Trim(),
+            StreetAddress = StreetAddress.Trim(),
+            Apartment = string.IsNullOrWhiteSpace(Apartment) ? null : Apartment.Trim(),
+            PostalCode = PostalCode.Trim(),
+            City = City.Trim(),
+            PhoneNumber = PhoneNumber.Trim()
+        };
+
+        IsSubmitting = true;
+        try
+        {
+            await UserService.CreateEmployeeAsync(requestingUserId, employee, Password);
+            ShowSuccessPopup = true;
+            ClearForm();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Message = "Kun en administrator kan oprette medarbejdere.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            Message = exception.Message;
+        }
+        catch (NpgsqlException exception)
+        {
+            Logger.LogError(exception, "Could not create employee account.");
+            Message = "Der opstod en databasefejl, og medarbejderen kunne ikke oprettes.";
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void ClearForm()
+    {
+        FirstName = "";
+        LastName = "";
+        Email = "";
+        StreetAddress = "";
+        Apartment = "";
+        PostalCode = "";
+        City = "";
+        PhoneNumber = "";
+        Password = "";
+        ConfirmPassword = "";
+    }
+
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/");
     }
 }

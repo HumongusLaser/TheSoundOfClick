@@ -4,3 +4,4 @@ TheSoundOfClick/obj/**
 .vs/
 *.csproj.user
 TheSoundOfClick/secret.json
+TheSoundOfClick/Database

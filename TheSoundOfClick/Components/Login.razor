@@ -9,6 +9,10 @@
 
         <form class="auth-form" method="post" action="/api/auth/signin">
             <AntiforgeryToken />
+            @if (!string.IsNullOrWhiteSpace(ReturnUrl))
+            {
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+            }
 
             <div class="auth-field">
                 <label for="email">Emailadresse</label>
@@ -62,4 +66,7 @@
 @code {
     [SupplyParameterFromQuery(Name = "error")]
     private string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
 }

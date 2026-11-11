@@ -2,6 +2,11 @@
 @rendermode InteractiveServer
 
 @inject ProductService ProductService
+@inject ILogger<Products> Logger
+@using System.Globalization
+@using System.Reflection
+@using System.Data.Common
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 
 @using Microsoft.AspNetCore.RateLimiting
 
@@ -21,6 +26,10 @@
 
     <hr />
 
+    @if (!string.IsNullOrEmpty(CreateSuccess))
+    {
+        <p class="text-success" role="status">@CreateSuccess</p>
+    }
 
     <div class="employee-form-section mt-4">
 
@@ -53,7 +62,8 @@
                 <input class="form-control"
                        placeholder="Indtast produktnavn eller ID..."
                        @bind="SearchText"
-                       @bind:event="oninput" />
+                       @bind:event="oninput"
+                       @bind:after="RefreshProductListAsync" />
 
             </div>
 
@@ -61,7 +71,9 @@
 
                 <label class="form-label">Kategori</label>
 
-                <select class="form-select" @bind="SelectedCategory">
+                <select class="form-select"
+                        @bind="SelectedCategory"
+                        @bind:after="RefreshProductListAsync">
 
                     <option value="all">Alle kategorier</option>
                     <option value="keyboard">Tastaturer</option>
@@ -77,7 +89,9 @@
 
                 <label class="form-label">Sortér efter</label>
 
-                <select class="form-select" @bind="SelectedSort">
+                <select class="form-select"
+                        @bind="SelectedSort"
+                        @bind:after="RefreshProductListAsync">
 
                     <option value="default">Standard</option>
                     <option value="name">Navn: A–Å</option>
@@ -94,79 +108,77 @@
 
 
 
-    @if (HasActiveSearch)
-    {
-        <div class="employee-form-section mt-4">
+    <div class="employee-form-section mt-4">
+        <h3>@(HasActiveSearch ? "Søgeresultater" : "Alle produkter")</h3>
 
-            <h3>Søgeresultater</h3>
-
-            @if (FilteredProducts.Any())
-            {
-                <div class="table-responsive mt-3">
-
-                    <table class="table">
-
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Produktnavn</th>
-                                <th>Kategori</th>
-                                <th>Pris</th>
-                                <th>Lager</th>
-                                <th>Handlinger</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-
-                            @foreach (var product in FilteredProducts)
-                            {
+        @if (!string.IsNullOrEmpty(ProductLoadError))
+        {
+            <p class="text-danger mt-3" role="alert">@ProductLoadError</p>
+        }
+        else
+        {
+            <div class="table-responsive mt-3">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Produktnavn</th>
+                            <th>Kategori</th>
+                            <th>Pris</th>
+                            <th>Lager</th>
+                            <th>Handlinger</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <Virtualize TItem="Product"
+                                    ItemsProvider="LoadProductPageAsync"
+                                    Context="product"
+                                    @ref="ProductVirtualize"
+                                    MaxItemCount="30"
+                                    SpacerElement="tr">
+                            <ItemContent>
                                 <tr>
-
                                     <td>@product.ID</td>
                                     <td>@product.Name</td>
-                                    <td>@product.Category</td>
+                                    <td>@GetCategoryDisplayName(product)</td>
                                     <td>@product.Price.ToString("N2") kr.</td>
                                     <td>@product.Stock</td>
-
                                     <td>
                                         <div class="d-flex gap-2">
-
                                             <button type="button"
                                                     class="page-button-outline"
                                                     title="Rediger produkt"
                                                     @onclick="() => OpenEditPopup(product)">
                                                 ✏️
                                             </button>
-
                                             <button type="button"
                                                     class="page-button-outline"
                                                     title="Slet produkt"
                                                     @onclick="() => OpenDeletePopup(product)">
                                                 🗑️
                                             </button>
-
                                         </div>
                                     </td>
-
                                 </tr>
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-            }
-            else
-            {
-                <p class="page-description mt-3">
-                    Ingen produkter matcher din søgning.
-                </p>
-            }
-
-        </div>
-    }
+                            </ItemContent>
+                            <Placeholder>
+                                <tr><td colspan="6">Indlæser produkter...</td></tr>
+                            </Placeholder>
+                            <EmptyContent>
+                                <tr>
+                                    <td colspan="6">
+                                        @(HasActiveSearch
+                                            ? "Ingen produkter matcher din søgning."
+                                            : "Der er ingen produkter i databasen.")
+                                    </td>
+                                </tr>
+                            </EmptyContent>
+                        </Virtualize>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
 
 </div>
 
@@ -185,51 +197,61 @@
             <div class="row g-3">
 
                 <div class="col-md-12">
-                    <label class="form-label">Produktnavn</label>
-                    <input class="form-control"
-                           @bind="NewProduct.Name" />
-                </div>
-
-                <div class="col-md-12">
                     <label class="form-label">Kategori</label>
 
                     <select class="form-select"
-                            @bind="NewProduct.CategoryValue">
-
+                            value="@NewProductCategory"
+                            @onchange="OnCreateCategoryChanged">
                         <option value="">Vælg kategori</option>
-                        <option value="keyboard">Tastaturer</option>
-                        <option value="mouse">Mus</option>
-                        <option value="mousepad">Musemåtter</option>
-                        <option value="keycap">Keycaps</option>
-
+                        @foreach (var category in ProductNameHelper.SubClassesUserName.Values)
+                        {
+                            <option value="@category.Category">@category.CategoryUserView</option>
+                        }
                     </select>
                 </div>
+                @foreach (CachedProperty property in CreateProductProperties)
+                {
+                    var propertyType = Nullable.GetUnderlyingType(property.Property.PropertyType)
+                        ?? property.Property.PropertyType;
 
-                <div class="col-md-6">
-                    <label class="form-label">Pris (kr.)</label>
-                    <input type="number"
-                           step="0.01"
-                           min="0"
-                           class="form-control"
-                           @bind="NewProduct.Price" />
-                </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="@($"create-{property.Property.Name}")">
+                            @(property.UserPageName ?? property.Property.Name)
+                        </label>
 
-                <div class="col-md-6">
-                    <label class="form-label">Antal på lager</label>
-                    <input type="number"
-                           min="0"
-                           class="form-control"
-                           @bind="NewProduct.Stock" />
-                </div>
-
-                <div class="col-md-12">
-                    <label class="form-label">Beskrivelse</label>
-                    <textarea class="form-control"
-                              rows="3"
-                              @bind="NewProduct.Description">
-                    </textarea>
-                </div>
-
+                        @if (propertyType == typeof(bool))
+                        {
+                            <select id="@($"create-{property.Property.Name}")"
+                                    class="form-select"
+                                    value="@GetCreatePropertyValue(property.Property)"
+                                    @onchange="e => SetCreatePropertyValue(property.Property, e.Value?.ToString())">
+                                <option value="">Vælg</option>
+                                <option value="true">Ja</option>
+                                <option value="false">Nej</option>
+                            </select>
+                        }
+                        else if (propertyType == typeof(string) &&
+                                 property.Property.Name == nameof(Product.Description))
+                        {
+                            <textarea id="@($"create-{property.Property.Name}")"
+                                      class="form-control"
+                                      rows="3"
+                                      value="@GetCreatePropertyValue(property.Property)"
+                                      @oninput="e => SetCreatePropertyValue(property.Property, e.Value?.ToString())">
+                            </textarea>
+                        }
+                        else
+                        {
+                            <input id="@($"create-{property.Property.Name}")"
+                                   type="@GetCreateInputType(propertyType)"
+                                   step="@(propertyType == typeof(decimal) ? "0.01" : null)"
+                                   min="@(propertyType == typeof(int) || propertyType == typeof(decimal) ? "0" : null)"
+                                   class="form-control"
+                                   value="@GetCreatePropertyValue(property.Property)"
+                                   @oninput="e => SetCreatePropertyValue(property.Property, e.Value?.ToString())" />
+                        }
+                    </div>
+                }
             </div>
 
             @if (!string.IsNullOrEmpty(CreateError))
@@ -247,7 +269,8 @@
 
                 <button type="button"
                         class="page-button"
-                        @onclick="CreateProduct">
+                        disabled="@(string.IsNullOrEmpty(NewProductCategory))"
+                        @onclick="CreateProductAsync">
                     Opret produkt
                 </button>
 
@@ -265,6 +288,8 @@
     private string SearchText = "";
     private string SelectedCategory = "all";
     private string SelectedSort = "default";
+    private string? ProductLoadError;
+    private Virtualize<Product>? ProductVirtualize;
 
     private bool HasActiveSearch =>
         !string.IsNullOrWhiteSpace(SearchText) ||
@@ -274,102 +299,148 @@
 
     private bool ShowCreatePopup = false;
     private string CreateError = "";
+    private string CreateSuccess = "";
+    private string NewProductCategory = "";
+    private readonly Dictionary<string, string> CreatePropertyValues = [];
 
-    private TestProduct NewProduct = new();
-
-
-
-    private List<TestProduct> Productss= new()
-    {
-        new TestProduct
-        {
-            ID = 1001,
-            Name = "Gaming Keyboard RGB",
-            Category = "Tastaturer",
-            CategoryValue = "keyboard",
-            Price = 699,
-            Stock = 15
-        },
-
-        new TestProduct
-        {
-            ID = 1002,
-            Name = "Wireless Mechanical Keyboard",
-            Category = "Tastaturer",
-            CategoryValue = "keyboard",
-            Price = 899,
-            Stock = 8
-        },
-
-        new TestProduct
-        {
-            ID = 1003,
-            Name = "RGB Gaming Mouse",
-            Category = "Mus",
-            CategoryValue = "mouse",
-            Price = 399,
-            Stock = 25
-        },
-
-        new TestProduct
-        {
-            ID = 1004,
-            Name = "Wireless Gaming Mouse",
-            Category = "Mus",
-            CategoryValue = "mouse",
-            Price = 649,
-            Stock = 12
-        },
-
-        new TestProduct
-        {
-            ID = 1005,
-            Name = "RGB Gaming Mousepad",
-            Category = "Musemåtter",
-            CategoryValue = "mousepad",
-            Price = 299,
-            Stock = 30
-        }
-    };
-
-
-    private IEnumerable<TestProduct> FilteredProducts
+    private IEnumerable<CachedProperty> CreateProductProperties
     {
         get
         {
-            IEnumerable<TestProduct> products = Productss;
-
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            Type? productType = GetSelectedProductType();
+            if (productType is null)
             {
-                products = products.Where(p =>
-                    p.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
-                    || p.ID.ToString().Contains(SearchText));
+                return [];
             }
 
-            if (SelectedCategory != "all")
-            {
-                products = products.Where(p =>
-                    p.CategoryValue == SelectedCategory);
-            }
-
-            products = SelectedSort switch
-            {
-                "name" => products.OrderBy(p => p.Name),
-                "priceAsc" => products.OrderBy(p => p.Price),
-                "priceDesc" => products.OrderByDescending(p => p.Price),
-                _ => products.OrderBy(p => p.ID)
-            };
-
-            return products;
+            return PropertyNameHelper.GetPropertiesWithMetaData(productType)
+                .Where(property =>
+                    property.Property.Name != nameof(Product.ID) &&
+                    property.Property.SetMethod?.IsPublic == true &&
+                    IsSupportedCreatePropertyType(property.Property.PropertyType));
         }
     }
 
+    private Type? GetSelectedProductType()
+    {
+        return ProductNameHelper.SubClassesUserName
+            .FirstOrDefault(category => category.Value.Category == NewProductCategory)
+            .Key;
+    }
+
+
+
+    private async ValueTask<ItemsProviderResult<Product>> LoadProductPageAsync(
+        ItemsProviderRequest request)
+    {
+        try
+        {
+            (List<Product> products, int totalCount) = await ProductService.GetProductPageAsync(
+                request.StartIndex,
+                Math.Min(request.Count, 30),
+                SelectedCategory == "all" ? null : SelectedCategory,
+                SearchText,
+                SelectedSort,
+                request.CancellationToken);
+            ProductLoadError = null;
+            return new ItemsProviderResult<Product>(products, totalCount);
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is DbException or InvalidOperationException)
+        {
+            Logger.LogError(exception, "Could not load a product page for product administration.");
+            ProductLoadError = "Produkter kunne ikke indlæses. Prøv at ændre søgningen eller genindlæse siden.";
+            await InvokeAsync(StateHasChanged);
+            return new ItemsProviderResult<Product>([], 0);
+        }
+    }
+
+    private async Task RefreshProductListAsync()
+    {
+        ProductLoadError = null;
+        if (ProductVirtualize is not null)
+        {
+            await ProductVirtualize.RefreshDataAsync();
+        }
+    }
+
+    private static string GetCategoryDisplayName(Product product)
+    {
+        string? categoryName = ProductNameHelper.SubClassesUserName
+            .FirstOrDefault(entry => entry.Value.Category == ProductFactory.GetCategory(product))
+            .Value.CategoryUserView;
+
+        return categoryName ?? ProductFactory.GetCategory(product);
+    }
 
     private void OpenCreatePopup()
     {
-        NewProduct = new TestProduct();
+        NewProductCategory = "";
+        CreatePropertyValues.Clear();
         CreateError = "";
+        CreateSuccess = "";
         ShowCreatePopup = true;
+    }
+
+    private void OnCreateCategoryChanged(ChangeEventArgs args)
+    {
+        NewProductCategory = args.Value?.ToString() ?? "";
+        CreateError = "";
+        CreatePropertyValues.Clear();
+
+        Type? productType = GetSelectedProductType();
+        if (productType is null)
+        {
+            return;
+        }
+
+        var product = (Product?)Activator.CreateInstance(productType);
+        if (product is null)
+        {
+            CreateError = "Produktkategorien kunne ikke indlæses.";
+            return;
+        }
+
+        foreach (CachedProperty property in CreateProductProperties)
+        {
+            object? value = property.Property.GetValue(product);
+            CreatePropertyValues[property.Property.Name] = value switch
+            {
+                null => "",
+                bool boolean => boolean ? "true" : "false",
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => value.ToString() ?? ""
+            };
+        }
+    }
+
+    private string GetCreatePropertyValue(PropertyInfo property)
+    {
+        return CreatePropertyValues.GetValueOrDefault(property.Name, "");
+    }
+
+    private void SetCreatePropertyValue(PropertyInfo property, string? value)
+    {
+        CreatePropertyValues[property.Name] = value ?? "";
+        CreateError = "";
+    }
+
+    private static bool IsSupportedCreatePropertyType(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        return type == typeof(string) ||
+               type == typeof(bool) ||
+               type == typeof(int) ||
+               type == typeof(decimal);
+    }
+
+    private static string GetCreateInputType(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        return type == typeof(int) || type == typeof(decimal) ? "number" : "text";
     }
 
 
@@ -382,75 +453,79 @@
 
 
 
-    private void CreateProduct()
+    private async Task CreateProductAsync()
     {
         CreateError = "";
 
-        if (string.IsNullOrWhiteSpace(NewProduct.Name) ||
-            string.IsNullOrWhiteSpace(NewProduct.CategoryValue))
+        Type? productType = GetSelectedProductType();
+        if (productType is null)
         {
-            CreateError = "Produktnavn og kategori skal udfyldes.";
+            CreateError = "Vælg en produktkategori.";
             return;
         }
 
-        if (NewProduct.Price <= 0)
+        if (Activator.CreateInstance(productType) is not Product product)
         {
-            CreateError = "Prisen skal være større end 0.";
+            CreateError = "Produktkategorien kunne ikke oprettes.";
             return;
         }
 
-        if (NewProduct.Stock < 0)
+        foreach (CachedProperty property in CreateProductProperties)
         {
-            CreateError = "Lagerantal kan ikke være negativt.";
-            return;
+            string value = GetCreatePropertyValue(property.Property);
+            Type propertyType = Nullable.GetUnderlyingType(property.Property.PropertyType)
+                ?? property.Property.PropertyType;
+
+            try
+            {
+                if (propertyType == typeof(string) && string.IsNullOrWhiteSpace(value))
+                {
+                    CreateError = $"{property.UserPageName ?? property.Property.Name} skal udfyldes.";
+                    return;
+                }
+
+                object? convertedValue = propertyType == typeof(string)
+                    ? value.Trim()
+                    : propertyType == typeof(bool)
+                        ? bool.Parse(value)
+                        : Convert.ChangeType(value, propertyType, CultureInfo.InvariantCulture);
+
+                property.Property.SetValue(product, convertedValue);
+            }
+            catch (Exception exception) when (
+                exception is FormatException or OverflowException or ArgumentException or
+                TargetInvocationException)
+            {
+                CreateError = $"{property.UserPageName ?? property.Property.Name}: " +
+                    (exception is TargetInvocationException { InnerException: not null } invocationException
+                        ? invocationException.InnerException?.Message ?? exception.Message
+                        : exception.Message);
+                return;
+            }
         }
 
-        NewProduct.ID = Productss.Max(p => p.ID) + 1;
-
-        NewProduct.Category = NewProduct.CategoryValue switch
+        try
         {
-            "keyboard" => "Tastaturer",
-            "mouse" => "Mus",
-            "mousepad" => "Musemåtter",
-            "keycap" => "Keycaps",
-            _ => ""
-        };
-
-        Productss.Add(NewProduct);
-
-        SearchText = NewProduct.Name;
-        SelectedCategory = "all";
-
-        CloseCreatePopup();
+            await ProductService.CreateProductAsync(product);
+            SearchText = product.Name;
+            SelectedCategory = "all";
+            await RefreshProductListAsync();
+            CreateSuccess = $"Produktet {product.Name} blev oprettet.";
+            CloseCreatePopup();
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not create product in category {Category}.", NewProductCategory);
+            CreateError = "Produktet kunne ikke gemmes. Kontrollér oplysningerne, og prøv igen.";
+        }
     }
 
 
-    private void OpenEditPopup(TestProduct product)
+    private void OpenEditPopup(Product product)
     {
-       
     }
 
-    private void OpenDeletePopup(TestProduct product)
+    private void OpenDeletePopup(Product product)
     {
-      
-    }
-
-
-
-    private class TestProduct
-    {
-        public int ID { get; set; }
-
-        public string Name { get; set; } = "";
-
-        public string Description { get; set; } = "";
-
-        public string Category { get; set; } = "";
-
-        public string CategoryValue { get; set; } = "";
-
-        public decimal Price { get; set; }
-
-        public int Stock { get; set; }
     }
 }

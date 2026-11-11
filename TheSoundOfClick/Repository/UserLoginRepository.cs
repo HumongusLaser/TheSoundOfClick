@@ -81,4 +81,24 @@ public class UserLoginRepository
 
         return userLogin;
     }
+
+    public async Task UpdatePasswordHashAsync(Guid userId, string passwordHash)
+    {
+        await using var connection = await m_dataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            """
+            UPDATE user_logins
+            SET password_hash = @password_hash
+            WHERE user_id = @user_id
+            """,
+            connection);
+
+        command.Parameters.AddWithValue("password_hash", passwordHash);
+        command.Parameters.AddWithValue("user_id", userId);
+
+        if (await command.ExecuteNonQueryAsync() != 1)
+        {
+            throw new NotFoundException("Login record not found.");
+        }
+    }
 }

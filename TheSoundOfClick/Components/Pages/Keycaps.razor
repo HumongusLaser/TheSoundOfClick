@@ -1,0 +1,157 @@
+﻿@page "/keycaps"
+@rendermode InteractiveServer
+@inject ProductService ProductService
+@inject CartService CartService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Keycaps | The Sound Of Click</PageTitle>
+
+<div class="page-content">
+    <h1>Keycaps</h1>
+    <p class="page-description">Find keycaps, der passer til dit tastatur og din stil.</p>
+    <hr />
+
+    <div class="row g-3 mb-4 mt-4">
+        <div class="col-md-4">
+            <label class="form-label">Baggrundsbelysning</label>
+            <select class="form-select" @bind="SelectedBacklight">
+                <option value="all">Alle</option>
+                <option value="yes">Kompatibel</option>
+                <option value="no">Ikke kompatibel</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Sortér efter</label>
+            <select class="form-select" @bind="SelectedSort">
+                <option value="default">Standard</option>
+                <option value="price-asc">Pris: Laveste først</option>
+                <option value="price-desc">Pris: Højeste først</option>
+                <option value="name">Navn: A–Å</option>
+            </select>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(CartMessage))
+    {
+        <p class="text-success" role="status">@CartMessage</p>
+    }
+
+    <div class="row g-4 mt-3">
+        @if (IsLoading)
+        {
+            <p>Indlæser keycaps...</p>
+        }
+        else if (FilteredKeycaps.Any())
+        {
+            @foreach (var keycap in FilteredKeycaps)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="product-card">
+                        <div class="product-image-placeholder">
+                            <i class="bi bi-image"></i>
+                            <p>Produktbillede kommer snart</p>
+                        </div>
+                        <div class="product-info">
+                            <h3>@keycap.Name</h3>
+                            <p>@keycap.Description</p>
+                            <div class="product-price">@keycap.Price.ToString("N2") kr.</div>
+                            <div class="product-actions">
+                                <button type="button"
+                                        class="page-button-outline"
+                                        @onclick="() => NavigateToProduct(keycap.ID)">
+                                    Se produkt
+                                </button>
+                                <button type="button"
+                                        class="page-button"
+                                        disabled="@(keycap.Stock <= 0)"
+                                        @onclick="() => AddToCartAsync(keycap)">
+                                    Læg i kurv
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="employee-form-section text-center">
+                    <h3>Ingen keycaps fundet</h3>
+                    <p class="page-description">Der er desværre ingen keycaps tilgængelige lige nu.</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Product> Products = [];
+    private string SelectedBacklight = "all";
+    private string SelectedSort = "default";
+    private string? CartMessage;
+    private bool IsLoading = true;
+
+    private IEnumerable<Keycap> FilteredKeycaps
+    {
+        get
+        {
+            IEnumerable<Keycap> keycaps = Products.OfType<Keycap>();
+
+            if (SelectedBacklight == "yes")
+            {
+                keycaps = keycaps.Where(keycap => keycap.IsBacklightCompatible);
+            }
+            else if (SelectedBacklight == "no")
+            {
+                keycaps = keycaps.Where(keycap => !keycap.IsBacklightCompatible);
+            }
+
+            return SelectedSort switch
+            {
+                "price-asc" => keycaps.OrderBy(keycap => keycap.Price),
+                "price-desc" => keycaps.OrderByDescending(keycap => keycap.Price),
+                "name" => keycaps.OrderBy(keycap => keycap.Name),
+                _ => keycaps
+            };
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Products = await ProductService.GetAllProductsAsync(null, "keycap", 100);
+        }
+        catch (NotFoundException)
+        {
+            Products = [];
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task AddToCartAsync(Product product)
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!Guid.TryParse(
+            authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out Guid userId))
+        {
+            string returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+            Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+            return;
+        }
+
+        await CartService.AddToCartAsync(product.ID, userId);
+        CartMessage = $"{product.Name} blev lagt i kurven.";
+    }
+
+    private void NavigateToProduct(Guid productId)
+    {
+        Navigation.NavigateTo($"/product/{productId}");
+    }
+}

@@ -1,7 +1,13 @@
 ﻿@page "/profile"
 @rendermode InteractiveServer
-
+@using Microsoft.AspNetCore.Authorization
+@using System.Data.Common
+@attribute [Authorize]
 @inject NavigationManager Navigation
+@inject UserService UserService
+@inject OrderService OrderService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<Profile> Logger
 
 <PageTitle>Min profil | The Sound Of Click</PageTitle>
 
@@ -14,6 +20,21 @@
     </p>
 
     <hr />
+
+    @if (IsLoading)
+    {
+        <p>Indlæser dine oplysninger...</p>
+    }
+    else if (!string.IsNullOrEmpty(LoadError))
+    {
+        <p class="text-danger" role="alert">@LoadError</p>
+    }
+    else
+    {
+    @if (!string.IsNullOrEmpty(AccountDeleteError))
+    {
+        <p class="text-danger" role="alert">@AccountDeleteError</p>
+    }
 
     <div class="employee-form-section mt-4">
 
@@ -121,46 +142,100 @@
     </div>
 
 
-    <div class="employee-form-section mt-4">
-
-        <h3>Mine ordrer</h3>
-
-        <p class="page-description">
-            Her kan du se dine tidligere bestillinger.
-        </p>
-
-        <div class="table-responsive">
-
-            <table class="table">
-
-                <thead>
-                    <tr>
-                        <th>Ordrenummer</th>
-                        <th>Dato</th>
-                        <th>Beløb</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach (var order in Orders)
-                    {
-                        <tr>
-                            <td>@order.OrderNumber</td>
-                            <td>@order.Date.ToString("dd-MM-yyyy")</td>
-                            <td>@order.Total.ToString("N2") kr.</td>
-                            <td>@order.Status</td>
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
+    <section class="employee-form-section profile-orders-section mt-4">
+        <div class="profile-orders-heading">
+            <div>
+                <h3>Mine ordrer</h3>
+                <p>Se dine tidligere køb og ordreoplysninger.</p>
+            </div>
+            <span class="profile-order-count">@OrderHistory.Count ordre@(OrderHistory.Count == 1 ? "" : "r")</span>
         </div>
 
-    </div>
+        @if (!string.IsNullOrEmpty(OrderHistoryError))
+        {
+            <p class="text-danger" role="alert">@OrderHistoryError</p>
+        }
+        else if (IsLoadingOrders)
+        {
+            <div class="profile-orders-loading" role="status">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Henter dine ordrer...
+            </div>
+        }
+        else if (OrderHistory.Count == 0)
+        {
+            <div class="profile-orders-empty">
+                <i class="bi bi-bag" aria-hidden="true"></i>
+                <strong>Du har ikke nogen ordrer endnu</strong>
+                <span>Dine køb vises her, når du har gennemført en bestilling.</span>
+                <a class="page-button-outline" href="/keyboards">Find produkter</a>
+            </div>
+        }
+        else
+        {
+            <div class="profile-order-list">
+                @foreach (OrderHistoryEntry order in OrderHistory)
+                {
+                    <details class="profile-order-card">
+                        <summary>
+                            <span class="profile-order-icon"><i class="bi bi-bag-check" aria-hidden="true"></i></span>
+                            <span class="profile-order-main">
+                                <strong>Ordre #@order.ID.ToString("N")[..8].ToUpperInvariant()</strong>
+                                <span>@order.DateCreated.ToLocalTime().ToString("dd-MM-yyyy 'kl.' HH:mm") · @order.ItemsAmount vare@(order.ItemsAmount == 1 ? "" : "r")</span>
+                            </span>
+                            <span class="profile-order-total">@order.TotalPrice.ToString("N2") kr.</span>
+                            <span class="profile-order-status">@FormatOrderStatus(order.Status)</span>
+                            <i class="bi bi-chevron-down profile-order-chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="profile-order-details">
+                            <div class="profile-order-address">
+                                <span>Leveringsadresse</span>
+                                <strong>@order.ShippingAddress</strong>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table profile-order-items">
+                                    <thead>
+                                        <tr>
+                                            <th>Produkt</th>
+                                            <th>Antal</th>
+                                            <th>Stykpris</th>
+                                            <th>Beløb</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (OrderHistoryItem item in order.Items)
+                                        {
+                                            <tr>
+                                                <td>@item.ProductName</td>
+                                                <td>@item.Quantity</td>
+                                                <td>@item.UnitPrice.ToString("N2") kr.</td>
+                                                <td>@((item.UnitPrice * item.Quantity).ToString("N2")) kr.</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </details>
+                }
+            </div>
+        }
+    </section>
+
+    @if (IsCustomer)
+    {
+        <section class="employee-form-section profile-delete-section mt-4">
+            <h3>Slet min konto</h3>
+            <p>Hvis du sletter din konto, kan du ikke længere logge ind.</p>
+            <button type="button"
+                    class="profile-delete-trigger"
+                    @onclick="() => ShowDeleteConfirmation = true">
+                Slet min profil
+            </button>
+        </section>
+    }
+
+    }
 
 </div>
 
@@ -223,8 +298,9 @@
 
                 <button type="button"
                         class="page-button"
-                        @onclick="SavePersonalInfo">
-                    Gem ændringer
+                        disabled="@IsSavingPersonalInfo"
+                        @onclick="SavePersonalInfoAsync">
+                    @(IsSavingPersonalInfo ? "Gemmer..." : "Gem ændringer")
                 </button>
 
             </div>
@@ -285,14 +361,16 @@
 
                 <button type="button"
                         class="page-button-outline"
+                        disabled="@IsSavingAddress"
                         @onclick="CloseAddressPopup">
                     Annuller
                 </button>
 
                 <button type="button"
                         class="page-button"
-                        @onclick="SaveAddress">
-                    Gem ændringer
+                        disabled="@IsSavingAddress"
+                        @onclick="SaveAddressAsync">
+                    @(IsSavingAddress ? "Gemmer..." : "Gem ændringer")
                 </button>
 
             </div>
@@ -302,16 +380,59 @@
     </div>
 }
 
+@if (ShowDeleteConfirmation)
+{
+    <div class="employee-modal-overlay">
+        <div class="employee-modal employee-delete-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="delete-own-account-title">
+            <div class="employee-delete-icon">
+                <i class="bi bi-trash3" aria-hidden="true"></i>
+            </div>
+            <h2 id="delete-own-account-title">Slet min profil</h2>
+            <p class="employee-delete-description">
+                Er du sikker på, at du vil slette din kundekonto?
+            </p>
+            <p class="employee-delete-warning">Du bliver logget ud, og handlingen kan ikke fortrydes.</p>
+            <div class="employee-delete-actions">
+                <button type="button"
+                        class="page-button-outline"
+                        @onclick="() => ShowDeleteConfirmation = false">
+                    Annuller
+                </button>
+                <form method="post" action="/api/auth/delete-account">
+                    <AntiforgeryToken />
+                    <button type="submit" class="employee-delete-button">
+                        Ja, slet min profil
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
 
 @code {
-    private string FirstName = "Test";
-    private string LastName = "Bruger";
-    private string Email = "test@example.com";
-    private string PhoneNumber = "12345678";
-    private string StreetAddress = "Testvej 10";
+    private string FirstName = "";
+    private string LastName = "";
+    private string Email = "";
+    private string PhoneNumber = "";
+    private string StreetAddress = "";
     private string Apartment = "";
-    private string PostalCode = "3600";
-    private string City = "Frederikssund";
+    private string PostalCode = "";
+    private string City = "";
+    private bool IsLoading = true;
+    private bool IsSavingPersonalInfo;
+    private bool IsSavingAddress;
+    private bool IsCustomer;
+    private bool ShowDeleteConfirmation;
+    private bool IsLoadingOrders;
+    private string? LoadError;
+    private string? AccountDeleteError;
+    private string? OrderHistoryError;
+    private Guid? CurrentUserId;
+    private List<OrderHistoryEntry> OrderHistory = [];
 
     private bool ShowPersonalPopup = false;
     private bool ShowAddressPopup = false;
@@ -329,6 +450,89 @@
     private string EditPostalCode = "";
     private string EditCity = "";
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!Guid.TryParse(
+                    authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    out Guid userId))
+            {
+                LoadError = "Kunne ikke finde den indloggede bruger. Log ind igen.";
+                return;
+            }
+
+            CurrentUserId = userId;
+            string accountDeleteResult = Microsoft.AspNetCore.WebUtilities.QueryHelpers
+                .ParseQuery(new Uri(Navigation.Uri).Query)
+                .TryGetValue("accountDelete", out var result)
+                ? result.ToString()
+                : "";
+            AccountDeleteError = accountDeleteResult switch
+            {
+                "failed" => "Din konto kunne ikke slettes. Den kan være knyttet til eksisterende ordrer eller andre data.",
+                "not-allowed" => "Kun kunder kan slette deres egen konto.",
+                _ => null
+            };
+
+            User user = await UserService.GetByID(userId);
+            IsCustomer = user.Role == UserRole.Customer;
+            FirstName = user.FirstName;
+            LastName = user.LastName;
+            Email = user.Email;
+            PhoneNumber = user.PhoneNumber;
+            StreetAddress = user.StreetAddress;
+            Apartment = user.Apartment ?? "";
+            PostalCode = user.PostalCode;
+            City = user.City;
+            await LoadOrderHistoryAsync(userId);
+        }
+        catch (NotFoundException exception)
+        {
+            Logger.LogWarning(exception, "Could not find the signed-in user profile.");
+            LoadError = "Dine brugeroplysninger blev ikke fundet. Log ind igen.";
+        }
+        catch (Exception exception) when (exception is DbException or FormatException or InvalidOperationException)
+        {
+            Logger.LogError(exception, "Could not load the signed-in user profile.");
+            LoadError = "Dine brugeroplysninger kunne ikke indlæses. Prøv igen senere.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadOrderHistoryAsync(Guid userId)
+    {
+        IsLoadingOrders = true;
+        OrderHistoryError = null;
+        try
+        {
+            OrderHistory = await OrderService.GetCustomerOrderHistoryAsync(userId);
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not load order history for user {UserId}.", userId);
+            OrderHistoryError = "Dine ordrer kunne ikke indlæses lige nu. Prøv igen senere.";
+        }
+        finally
+        {
+            IsLoadingOrders = false;
+        }
+    }
+
+    private static string FormatOrderStatus(string status) =>
+        status switch
+        {
+            "Placed" => "Modtaget",
+            "Processing" => "Behandles",
+            "Shipped" => "Afsendt",
+            "Completed" => "Afsluttet",
+            "Cancelled" => "Annulleret",
+            _ => status
+        };
 
     private void OpenPersonalPopup()
     {
@@ -350,7 +554,7 @@
     }
 
 
-    private void SavePersonalInfo()
+    private async Task SavePersonalInfoAsync()
     {
         PersonalError = "";
 
@@ -390,12 +594,51 @@
             return;
         }
 
-        FirstName = EditFirstName.Trim();
-        LastName = EditLastName.Trim();
-        Email = EditEmail.Trim();
-        PhoneNumber = EditPhoneNumber.Trim();
+        if (CurrentUserId is not Guid userId)
+        {
+            PersonalError = "Kunne ikke finde din konto. Log ind igen.";
+            return;
+        }
 
-        ClosePersonalPopup();
+        EditFirstName = EditFirstName.Trim();
+        EditLastName = EditLastName.Trim();
+        EditEmail = EditEmail.Trim();
+        EditPhoneNumber = EditPhoneNumber.Trim();
+
+        IsSavingPersonalInfo = true;
+        try
+        {
+            await UserService.UpdateProfileAsync(
+                userId,
+                EditFirstName,
+                EditLastName,
+                EditEmail,
+                EditPhoneNumber);
+
+            FirstName = EditFirstName;
+            LastName = EditLastName;
+            Email = EditEmail;
+            PhoneNumber = EditPhoneNumber;
+            ClosePersonalPopup();
+        }
+        catch (InvalidOperationException exception)
+        {
+            PersonalError = exception.Message;
+        }
+        catch (NotFoundException exception)
+        {
+            Logger.LogWarning(exception, "Could not save profile for user {UserId}.", userId);
+            PersonalError = "Din konto blev ikke fundet. Log ind igen.";
+        }
+        catch (Exception exception) when (exception is DbException or FormatException)
+        {
+            Logger.LogError(exception, "Could not update personal profile information for user {UserId}.", userId);
+            PersonalError = "Dine oplysninger kunne ikke gemmes. Prøv igen.";
+        }
+        finally
+        {
+            IsSavingPersonalInfo = false;
+        }
     }
 
 
@@ -418,9 +661,14 @@
     }
 
 
-    private void SaveAddress()
+    private async Task SaveAddressAsync()
     {
         AddressError = "";
+
+        EditStreetAddress = EditStreetAddress.Trim();
+        EditApartment = EditApartment.Trim();
+        EditPostalCode = EditPostalCode.Trim();
+        EditCity = EditCity.Trim();
 
         if (string.IsNullOrWhiteSpace(EditStreetAddress) ||
             string.IsNullOrWhiteSpace(EditPostalCode) ||
@@ -430,20 +678,54 @@
             return;
         }
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(
-            EditPostalCode.Trim(),
-            @"^\d{4}$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(EditStreetAddress, @"^(?=.*\p{L})(?=.*\d)[\p{L}\d\s.'/-]+$"))
+        {
+            AddressError = "Indtast en gyldig adresse med vejnavn og husnummer.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(EditPostalCode, @"^\d{4}$"))
         {
             AddressError = "Postnummeret skal indeholde præcis 4 cifre.";
             return;
         }
 
-        StreetAddress = EditStreetAddress.Trim();
-        Apartment = EditApartment.Trim();
-        PostalCode = EditPostalCode.Trim();
-        City = EditCity.Trim();
+        if (CurrentUserId is not Guid userId)
+        {
+            AddressError = "Kunne ikke finde din konto. Log ind igen.";
+            return;
+        }
 
-        CloseAddressPopup();
+        IsSavingAddress = true;
+        try
+        {
+            await UserService.UpdateProfileAddressAsync(
+                userId,
+                EditStreetAddress,
+                string.IsNullOrWhiteSpace(EditApartment) ? null : EditApartment,
+                EditPostalCode,
+                EditCity);
+
+            StreetAddress = EditStreetAddress;
+            Apartment = EditApartment;
+            PostalCode = EditPostalCode;
+            City = EditCity;
+            CloseAddressPopup();
+        }
+        catch (NotFoundException exception)
+        {
+            Logger.LogWarning(exception, "Could not save address for user {UserId}.", userId);
+            AddressError = "Din konto blev ikke fundet. Log ind igen.";
+        }
+        catch (Exception exception) when (exception is DbException or InvalidOperationException)
+        {
+            Logger.LogError(exception, "Could not update address for user {UserId}.", userId);
+            AddressError = "Din adresse kunne ikke gemmes. Prøv igen.";
+        }
+        finally
+        {
+            IsSavingAddress = false;
+        }
     }
 
 
@@ -454,36 +736,4 @@
     }
 
 
-    // MIDLERTIDIGE ORDRER
-
-    private List<TestOrder> Orders = new()
-    {
-        new TestOrder
-        {
-            OrderNumber = "1001",
-            Date = new DateTime(2026, 10, 15),
-            Total = 699,
-            Status = "Leveret"
-        },
-
-        new TestOrder
-        {
-            OrderNumber = "1002",
-            Date = new DateTime(2026, 10, 28),
-            Total = 899,
-            Status = "Under behandling"
-        }
-    };
-
-
-    private class TestOrder
-    {
-        public string OrderNumber { get; set; } = "";
-
-        public DateTime Date { get; set; }
-
-        public decimal Total { get; set; }
-
-        public string Status { get; set; } = "";
-    }
 }

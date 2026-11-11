@@ -1,0 +1,217 @@
+﻿@page "/cart"
+@rendermode InteractiveServer
+@inject CartService CartService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject ILogger<Cart> Logger
+
+<PageTitle>Indkøbskurv | The Sound Of Click</PageTitle>
+
+<div class="page-content">
+    <h1>Din indkøbskurv</h1>
+    <p class="page-description">Her kan du se produkterne, du har lagt i kurven.</p>
+    <hr />
+
+    @if (IsLoading)
+    {
+        <p>Indlæser din kurv...</p>
+    }
+    else if (CartLines.Count == 0)
+    {
+        <div class="employee-form-section text-center">
+            <h2>Din kurv er tom</h2>
+            <p class="page-description">Find et produkt, og læg det i kurven for at se det her.</p>
+            <a class="page-button mt-3" href="/keyboards">Se produkter</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive mt-4">
+            <table class="table admin-table">
+                <thead>
+                    <tr>
+                        <th>Produkt</th>
+                        <th>Pris</th>
+                        <th>Antal</th>
+                        <th>I alt</th>
+                        <th>Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (CartLine line in CartLines)
+                    {
+                        <tr>
+                            <td>
+                                <a href="@($"/product/{line.Product.ID}")">@line.Product.Name</a>
+                            </td>
+                            <td>@line.Product.Price.ToString("N2") kr.</td>
+                            <td>
+                                <div class="d-inline-flex align-items-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            aria-label="@($"Fjern en {line.Product.Name} fra kurven")"
+                                            disabled="@(IsUpdating || line.Item.Quantity <= 1)"
+                                            @onclick="() => ChangeQuantityAsync(line, -1)">
+                                        −
+                                    </button>
+                                    <span aria-live="polite">@line.Item.Quantity</span>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            aria-label="@($"Tilføj en {line.Product.Name} til kurven")"
+                                            disabled="@(IsUpdating || line.Item.Quantity >= line.Product.Stock)"
+                                            @onclick="() => ChangeQuantityAsync(line, 1)">
+                                        +
+                                    </button>
+                                </div>
+                            </td>
+                            <td>@((line.Product.Price * line.Item.Quantity).ToString("N2")) kr.</td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        disabled="@IsUpdating"
+                                        @onclick="() => RemoveItemAsync(line)">
+                                    Fjern
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3">Total</th>
+                        <th>@CartTotal.ToString("N2") kr.</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button"
+                    class="page-button"
+                    disabled="@IsUpdating"
+                    @onclick="CheckoutAsync">
+                @(IsUpdating ? "Behandler køb..." : "Køb")
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(CartError))
+    {
+        <p class="text-danger mt-3" role="alert">@CartError</p>
+    }
+
+    @if (!string.IsNullOrEmpty(CartMessage))
+    {
+        <p class="text-success mt-3" role="status">@CartMessage</p>
+    }
+
+</div>
+
+@code {
+    private List<CartLine> CartLines = [];
+    private bool IsLoading = true;
+    private bool IsUpdating;
+    private string? CartMessage;
+    private string? CartError;
+    private Guid? CurrentUserId;
+
+    private decimal CartTotal => CartLines.Sum(line => line.Product.Price * line.Item.Quantity);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserId = Guid.TryParse(
+            authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out Guid parsedUserId)
+            ? parsedUserId
+            : null;
+
+        CartLines = await CartService.GetCurrentCartLinesAsync(CurrentUserId);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ChangeQuantityAsync(CartLine line, int change)
+    {
+        int newQuantity = line.Item.Quantity + change;
+        if (newQuantity < 1 || (change > 0 && newQuantity > line.Product.Stock))
+        {
+            return;
+        }
+
+        IsUpdating = true;
+        CartMessage = null;
+
+        try
+        {
+            await CartService.UpdateCartItemAsync(line.Item.ID, newQuantity);
+            line.Item.Quantity = newQuantity;
+            CartMessage = $"{line.Product.Name}: antal ændret til {newQuantity}.";
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
+    }
+
+    private async Task CheckoutAsync()
+    {
+        CartError = null;
+        if (CurrentUserId is null)
+        {
+            Navigation.NavigateTo("/login?returnUrl=%2Fcart");
+            return;
+        }
+
+        IsUpdating = true;
+        try
+        {
+            await CartService.CheckoutAsync(CurrentUserId);
+            Navigation.NavigateTo("/checkout");
+        }
+        catch (InvalidOperationException exception)
+        {
+            CartError = exception.Message;
+            CartLines = await CartService.GetCurrentCartLinesAsync(CurrentUserId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            CartError = "Log ind som kunde for at gennemføre købet.";
+        }
+        catch (NotFoundException)
+        {
+            CartError = "Din konto eller kurv blev ikke fundet. Log ind igen, og prøv på ny.";
+        }
+        catch (System.Data.Common.DbException exception)
+        {
+            Logger.LogError(exception, "Could not complete checkout for user {UserId}.", CurrentUserId);
+            CartError = "Købet kunne ikke gennemføres. Prøv igen.";
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
+    }
+
+    private async Task RemoveItemAsync(CartLine line)
+    {
+        IsUpdating = true;
+        CartMessage = null;
+
+        try
+        {
+            await CartService.DeleteCartItemAsync(line.Item.ID);
+            CartLines.Remove(line);
+            CartMessage = $"{line.Product.Name} blev fjernet fra kurven.";
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
+    }
+}

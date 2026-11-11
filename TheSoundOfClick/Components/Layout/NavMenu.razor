@@ -1,4 +1,6 @@
-﻿@* Øverste informationsbjælke *@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+@* Øverste informationsbjælke *@
 <div class="announcement-bar">
     <span>🚚 2-4 dages levering</span>
     <span class="separator">✦</span>
@@ -31,12 +33,12 @@
                 Tastaturer
             </NavLink>
 
-            <NavLink class="nav-link" href="mice">
-                Mus
-            </NavLink>
-
             <NavLink class="nav-link" href="mousepads">
                 Musemåtter
+            </NavLink>
+
+            <NavLink class="nav-link" href="keycaps">
+                Keycaps
             </NavLink>
 
             @* Kun medarbejdere og admins *@
@@ -45,10 +47,13 @@
                     <NavLink class="nav-link" href="products">
                         Administrer produkter
                     </NavLink>
+                    <NavLink class="nav-link" href="customers">
+                        Oversigt over kunder
+                    </NavLink>
                 </Authorized>
             </AuthorizeView>
 
-            @* Kun admins *@
+            @* Kun medarbejdere og admins *@
             <AuthorizeView Roles="Admin">
                 <Authorized>
                     <NavLink class="nav-link" href="manage-employees">
@@ -61,27 +66,39 @@
 
         @* Bruger og indkøbskurv *@
         <div class="navbar-actions">
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="profile-button"
+                             href="profile"
+                             title="Min profil"
+                             aria-label="Min profil">
+                        <i class="bi bi-person-gear"></i>
+                    </NavLink>
 
-            <NavLink class="nav-link"
-                     href="register"
-                     title="Opret bruger">
-                <i class="bi bi-person-plus"></i>
-                <span>Opret bruger</span>
-            </NavLink>
+                    <form class="logout-form" method="post" action="/api/auth/signout">
+                        <AntiforgeryToken />
+                        <button class="logout-button" type="submit">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                            <span>Log ud</span>
+                        </button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="nav-link"
+                             href="register"
+                             title="Opret bruger">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Opret bruger</span>
+                    </NavLink>
 
-            <NavLink class="nav-link"
-                     href="login"
-                     title="Log ind">
-                <i class="bi bi-person-circle"></i>
-                <span>Log ind</span>
-            </NavLink>
-
-            @* Profil *@
-            <NavLink class="profile-button"
-                     href="profile"
-                     title="Min profil">
-                <i class="bi bi-person-gear"></i>
-            </NavLink>
+                    <NavLink class="nav-link"
+                             href="login"
+                             title="Log ind">
+                        <i class="bi bi-person-circle"></i>
+                        <span>Log ind</span>
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
 
             @* Indkøbskurv *@
             <a class="cart-button"

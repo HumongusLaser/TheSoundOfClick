@@ -1,214 +1,154 @@
 ﻿@page "/keyboards"
 @rendermode InteractiveServer
+@inject ProductService ProductService
+@inject CartService CartService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
 
 <PageTitle>Tastaturer | The Sound Of Click</PageTitle>
 
 <div class="page-content">
-
     <h1>Tastaturer</h1>
-
-    <p class="page-description">
-        Find dit næste gaming-tastatur blandt vores udvalg.
-    </p>
-
+    <p class="page-description">Find dit næste gaming-tastatur blandt vores udvalg.</p>
     <hr />
 
     <div class="row g-3 mb-4 mt-4">
-
         <div class="col-md-4">
-
             <label class="form-label">Forbindelse</label>
-
             <select class="form-select" @bind="SelectedConnection">
                 <option value="all">Alle</option>
                 <option value="wireless">Trådløs</option>
                 <option value="wired">Med kabel</option>
             </select>
-
         </div>
-
         <div class="col-md-4">
-
             <label class="form-label">Størrelse</label>
-
             <select class="form-select" @bind="SelectedSize">
                 <option value="all">Alle størrelser</option>
                 <option value="60%">60 %</option>
                 <option value="75%">75 %</option>
                 <option value="100%">100 %</option>
             </select>
-
         </div>
-
         <div class="col-md-4">
-
             <label class="form-label">Sortér efter</label>
-
             <select class="form-select" @bind="SelectedSort">
                 <option value="default">Standard</option>
                 <option value="price-asc">Pris: Laveste først</option>
                 <option value="price-desc">Pris: Højeste først</option>
                 <option value="name">Navn: A–Å</option>
             </select>
-
         </div>
-
     </div>
 
-    <div class="row g-4 mt-3">
+    @if (!string.IsNullOrEmpty(CartMessage))
+    {
+        <p class="text-success" role="status">@CartMessage</p>
+    }
 
-        @if (FilteredKeyboards.Any())
+    <div class="row g-4 mt-3">
+        @if (IsLoading)
+        {
+            <p>Indlæser tastaturer...</p>
+        }
+        else if (FilteredKeyboards.Any())
         {
             @foreach (var keyboard in FilteredKeyboards)
             {
                 <div class="col-12 col-md-6 col-lg-4">
-
                     <div class="product-card">
-
-                        <div class="product-image">
-
-                            <img src="@keyboard.Image"
-                                 alt="@keyboard.Name" />
-
+                        <div class="product-image-placeholder">
+                            <i class="bi bi-image"></i>
+                            <p>Produktbillede kommer snart</p>
                         </div>
-
                         <div class="product-info">
-
                             <h3>@keyboard.Name</h3>
-
                             <p>@keyboard.Description</p>
-
-                            <div class="product-price">
-                                @keyboard.Price.ToString("N2") kr.
-                            </div>
-
+                            <div class="product-price">@keyboard.Price.ToString("N2") kr.</div>
                             <div class="product-actions">
-
                                 <button type="button"
-                                        class="page-button-outline">
+                                        class="page-button-outline"
+                                        @onclick="() => NavigateToProduct(keyboard.ID)">
                                     Se produkt
                                 </button>
-
                                 <button type="button"
-                                        class="page-button">
+                                        class="page-button"
+                                        disabled="@(keyboard.Stock <= 0)"
+                                        @onclick="() => AddToCartAsync(keyboard)">
                                     Læg i kurv
                                 </button>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
             }
         }
         else
         {
             <div class="col-12">
-
                 <div class="employee-form-section text-center">
-
                     <h3>Ingen produkter fundet</h3>
-
-                    <p class="page-description">
-                        Der er desværre ingen tastaturer, der matcher dine valgte filtre.
-                    </p>
-
-                    <button type="button"
-                            class="page-button-outline mt-3"
-                            @onclick="ResetFilters">
+                    <p class="page-description">Der er desværre ingen tastaturer, der matcher dine valgte filtre.</p>
+                    <button type="button" class="page-button-outline mt-3" @onclick="ResetFilters">
                         Nulstil filtre
                     </button>
-
                 </div>
-
             </div>
         }
-
     </div>
-
 </div>
 
 @code {
-
-
+    private List<Product> Products = [];
     private string SelectedConnection = "all";
     private string SelectedSize = "all";
     private string SelectedSort = "default";
+    private string? CartMessage;
+    private bool IsLoading = true;
 
-
-
-    private List<KeyboardProduct> Keyboardsss = new()
-    {
-        new KeyboardProduct
-        {
-            Name = "Gaming Keyboard RGB",
-            Description = "Mekanisk gaming-tastatur med RGB-belysning.",
-            Price = 699,
-            Image = "/images/keyboards/keyboard1.jpg",
-            IsWireless = false,
-            Size = "100%"
-        },
-
-        new KeyboardProduct
-        {
-            Name = "Wireless Mechanical Keyboard",
-            Description = "Trådløst mekanisk tastatur med kompakt design.",
-            Price = 899,
-            Image = "/images/keyboards/keyboard2.jpg",
-            IsWireless = true,
-            Size = "75%"
-        },
-
-        new KeyboardProduct
-        {
-            Name = "Compact Gaming Keyboard",
-            Description = "Kompakt gaming-tastatur med hurtige switches.",
-            Price = 549,
-            Image = "/images/keyboards/keyboard3.jpg",
-            IsWireless = false,
-            Size = "60%"
-        }
-    };
-
-
-
-    private IEnumerable<KeyboardProduct> SortedKeyboards =>
-        SelectedSort switch
-        {
-            "price-asc" => Keyboardsss.OrderBy(k => k.Price),
-
-            "price-desc" => Keyboardsss.OrderByDescending(k => k.Price),
-
-            "name" => Keyboardsss.OrderBy(k => k.Name),
-
-            _ => Keyboardsss
-        };
-
-
-
-    private IEnumerable<KeyboardProduct> FilteredKeyboards
+    private IEnumerable<Keyboard> FilteredKeyboards
     {
         get
         {
-            var keyboards = SortedKeyboards;
+            IEnumerable<Keyboard> keyboards = Products.OfType<Keyboard>();
 
             if (SelectedConnection == "wireless")
             {
-                keyboards = keyboards.Where(k => k.IsWireless);
+                keyboards = keyboards.Where(keyboard => keyboard.IsWireless);
             }
             else if (SelectedConnection == "wired")
             {
-                keyboards = keyboards.Where(k => !k.IsWireless);
+                keyboards = keyboards.Where(keyboard => !keyboard.IsWireless);
             }
 
             if (SelectedSize != "all")
             {
-                keyboards = keyboards.Where(k => k.Size == SelectedSize);
+                keyboards = keyboards.Where(keyboard => keyboard.Size == SelectedSize);
             }
 
-            return keyboards;
+            return SelectedSort switch
+            {
+                "price-asc" => keyboards.OrderBy(keyboard => keyboard.Price),
+                "price-desc" => keyboards.OrderByDescending(keyboard => keyboard.Price),
+                "name" => keyboards.OrderBy(keyboard => keyboard.Name),
+                _ => keyboards
+            };
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Products = await ProductService.GetAllProductsAsync(null, "keyboard", 100);
+        }
+        catch (NotFoundException)
+        {
+            Products = [];
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 
@@ -219,21 +159,24 @@
         SelectedSort = "default";
     }
 
-
-    // MIDLERTIDIG PRODUKTKLASSE
-
-    private class KeyboardProduct
+    private async Task AddToCartAsync(Product product)
     {
-        public string Name { get; set; } = "";
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!Guid.TryParse(
+            authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out Guid userId))
+        {
+            string returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+            Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+            return;
+        }
 
-        public string Description { get; set; } = "";
+        await CartService.AddToCartAsync(product.ID, userId);
+        CartMessage = $"{product.Name} blev lagt i kurven.";
+    }
 
-        public decimal Price { get; set; }
-
-        public string Image { get; set; } = "";
-
-        public bool IsWireless { get; set; }
-
-        public string Size { get; set; } = "";
+    private void NavigateToProduct(Guid productId)
+    {
+        Navigation.NavigateTo($"/product/{productId}");
     }
 }
