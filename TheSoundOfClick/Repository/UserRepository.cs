@@ -250,6 +250,35 @@ public class UserRepository(NpgsqlDataSource m_dbSource)
         }
     }
 
+    public async Task UpdateCustomerDiscountRoleAsync(Guid customerId, DiscountRole discountRole)
+    {
+        await using var connection = await m_dbSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            """
+            UPDATE users
+            SET discount_role = (
+                SELECT id
+                FROM discount_roles
+                WHERE role = @discount_role
+            )
+            WHERE id = @customer_id
+              AND role = (
+                  SELECT id
+                  FROM user_roles
+                  WHERE role = 'Customer'
+              )
+            RETURNING id
+            """,
+            connection);
+        command.Parameters.AddWithValue("discount_role", discountRole.ToString());
+        command.Parameters.AddWithValue("customer_id", customerId);
+
+        if (await command.ExecuteScalarAsync() is not Guid)
+        {
+            throw new NotFoundException("Customer not found.");
+        }
+    }
+
     public async Task DeleteStaffAsync(Guid userId, UserRole expectedRole)
     {
         await using var connection = await m_dbSource.OpenConnectionAsync();

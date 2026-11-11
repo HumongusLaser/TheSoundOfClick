@@ -23,6 +23,10 @@
     {
         <p class="text-success" role="status">@ActionMessage</p>
     }
+    @if (!string.IsNullOrEmpty(DiscountRoleError))
+    {
+        <p class="text-danger" role="alert">@DiscountRoleError</p>
+    }
 
     <section class="employee-form-section customer-overview-section">
         <h3>Kunder</h3>
@@ -38,6 +42,7 @@
                         <th>Adresse</th>
                         <th>Postnummer</th>
                         <th>By</th>
+                        <th>Rabatrolle</th>
                         <th>Handlinger</th>
                     </tr>
                 </thead>
@@ -65,6 +70,25 @@
                                 </td>
                                 <td>@customer.PostalCode</td>
                                 <td>@customer.City</td>
+                                <td>
+                                    <AuthorizeView Roles="Admin">
+                                        <Authorized>
+                                            <select class="form-select form-select-sm"
+                                                    aria-label="@($"Rabatrolle for {customer.FirstName} {customer.LastName}")"
+                                                    value="@customer.DiscountRole"
+                                                    disabled="@(UpdatingDiscountRoleCustomerId.HasValue)"
+                                                    @onchange="args => UpdateCustomerDiscountRoleAsync(customer, args)">
+                                                <option value="@DiscountRole.Customer">Kunde</option>
+                                                <option value="@DiscountRole.Employee">Medarbejder</option>
+                                                <option value="@DiscountRole.Admin">Administrator</option>
+                                                <option value="@DiscountRole.Student">Studerende</option>
+                                            </select>
+                                        </Authorized>
+                                        <NotAuthorized>
+                                            @GetDiscountRoleDisplayName(customer.DiscountRole)
+                                        </NotAuthorized>
+                                    </AuthorizeView>
+                                </td>
                                 <td>
                                     <AuthorizeView Roles="Employee,Admin">
                                         <Authorized>
@@ -101,10 +125,10 @@
                             </tr>
                         </ItemContent>
                         <Placeholder>
-                            <tr><td colspan="9">Indlæser kunder...</td></tr>
+                            <tr><td colspan="10">Indlæser kunder...</td></tr>
                         </Placeholder>
                         <EmptyContent>
-                            <tr><td colspan="9">Der er ingen kunder registreret.</td></tr>
+                            <tr><td colspan="10">Der er ingen kunder registreret.</td></tr>
                         </EmptyContent>
                     </Virtualize>
                 </tbody>
@@ -166,6 +190,12 @@
                     <h2 id="customer-orders-title">Kundens ordrer</h2>
                     <p>@CustomerOrdersCustomer.FirstName @CustomerOrdersCustomer.LastName</p>
                 </div>
+                @if (CustomerOrders.Count > 0)
+                {
+                    <span class="customer-orders-count">
+                        @CustomerOrders.Count @(CustomerOrders.Count == 1 ? "ordre" : "ordrer")
+                    </span>
+                }
                 <button type="button"
                         class="customer-orders-close"
                         aria-label="Luk"
@@ -190,7 +220,7 @@
                 <div class="profile-orders-empty">
                     <i class="bi bi-bag" aria-hidden="true"></i>
                     <strong>Kunden har ingen ordrer endnu</strong>
-                    <span>Gennemførte køb vises her.</span>
+                    <span>Ordrer vises her, når kunden har gennemført et køb.</span>
                 </div>
             }
             else
@@ -198,45 +228,58 @@
                 <div class="customer-orders-list">
                     @foreach (OrderHistoryEntry order in CustomerOrders)
                     {
-                        <article class="customer-order-card">
-                            <header>
-                                <div>
+                        <details class="customer-order-card">
+                            <summary>
+                                <span class="customer-order-icon">
+                                    <i class="bi bi-receipt" aria-hidden="true"></i>
+                                </span>
+                                <span class="customer-order-main">
                                     <strong>Ordre #@order.ID.ToString("N")[..8].ToUpperInvariant()</strong>
                                     <span>@order.DateCreated.ToLocalTime().ToString("dd-MM-yyyy 'kl.' HH:mm")</span>
+                                </span>
+                                <span class="profile-order-status">@FormatOrderStatus(order.Status)</span>
+                                <span class="customer-order-total">@order.TotalPrice.ToString("N2") kr.</span>
+                                <i class="bi bi-chevron-down customer-order-chevron" aria-hidden="true"></i>
+                            </summary>
+                            <div class="customer-order-details">
+                                <div class="customer-order-address">
+                                    <span>Leveringsadresse</span>
+                                    <strong>
+                                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                                        @order.ShippingAddress
+                                    </strong>
                                 </div>
-                                <div class="customer-order-summary">
-                                    <span class="profile-order-status">@FormatOrderStatus(order.Status)</span>
-                                    <strong>@order.TotalPrice.ToString("N2") kr.</strong>
-                                </div>
-                            </header>
-                            <div class="table-responsive">
-                                <table class="table profile-order-items">
-                                    <thead>
-                                        <tr>
-                                            <th>Produkt</th>
-                                            <th>Antal</th>
-                                            <th>Stykpris</th>
-                                            <th>Beløb</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (OrderHistoryItem item in order.Items)
-                                        {
+                                <div class="table-responsive">
+                                    <table class="table profile-order-items customer-order-items">
+                                        <thead>
                                             <tr>
-                                                <td>@item.ProductName</td>
-                                                <td>@item.Quantity</td>
-                                                <td>@item.UnitPrice.ToString("N2") kr.</td>
-                                                <td>@((item.UnitPrice * item.Quantity).ToString("N2")) kr.</td>
+                                                <th>Produkt</th>
+                                                <th>Antal</th>
+                                                <th>Stykpris</th>
+                                                <th>Beløb</th>
                                             </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (OrderHistoryItem item in order.Items)
+                                            {
+                                                <tr>
+                                                    <td>@item.ProductName</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>@item.UnitPrice.ToString("N2") kr.</td>
+                                                    <td>@((item.UnitPrice * item.Quantity).ToString("N2")) kr.</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3">Ordretotal</th>
+                                                <th>@order.TotalPrice.ToString("N2") kr.</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
-                            <p class="customer-order-address">
-                                <i class="bi bi-geo-alt" aria-hidden="true"></i>
-                                @order.ShippingAddress
-                            </p>
-                        </article>
+                        </details>
                     }
                 </div>
             }
@@ -250,11 +293,81 @@
     private User? CustomerToDelete;
     private string? DeleteError;
     private string? ActionMessage;
+    private string? DiscountRoleError;
     private bool IsDeleting;
+    private Guid? UpdatingDiscountRoleCustomerId;
     private User? CustomerOrdersCustomer;
     private List<OrderHistoryEntry> CustomerOrders = [];
     private string? CustomerOrdersError;
     private bool IsLoadingCustomerOrders;
+
+    private static string GetDiscountRoleDisplayName(DiscountRole discountRole) =>
+        discountRole switch
+        {
+            DiscountRole.Employee => "Medarbejder",
+            DiscountRole.Admin => "Administrator",
+            DiscountRole.Student => "Studerende",
+            _ => "Kunde"
+        };
+
+    private async Task UpdateCustomerDiscountRoleAsync(User customer, ChangeEventArgs args)
+    {
+        if (!Enum.TryParse(args.Value?.ToString(), out DiscountRole discountRole) ||
+            !Enum.IsDefined(discountRole))
+        {
+            DiscountRoleError = "Vælg en gyldig rabatrolle.";
+            return;
+        }
+
+        if (customer.DiscountRole == discountRole)
+        {
+            return;
+        }
+
+        UpdatingDiscountRoleCustomerId = customer.ID;
+        DiscountRoleError = null;
+        ActionMessage = null;
+
+        try
+        {
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!Guid.TryParse(
+                    authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                    out Guid requestingUserId))
+            {
+                throw new UnauthorizedAccessException("An administrator must be signed in.");
+            }
+
+            await UserService.UpdateCustomerDiscountRoleAsync(
+                requestingUserId,
+                customer.ID,
+                discountRole);
+
+            customer.DiscountRole = discountRole;
+            ActionMessage = $"Rabatrollen for {customer.FirstName} {customer.LastName} blev opdateret.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            DiscountRoleError = "Kun en administrator kan ændre kunders rabatroller.";
+        }
+        catch (NotFoundException)
+        {
+            DiscountRoleError = "Kunden blev ikke fundet. Genindlæs kundeoversigten.";
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            DiscountRoleError = "Vælg en gyldig rabatrolle.";
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not update discount role for customer {CustomerId}.", customer.ID);
+            DiscountRoleError = "Kundens rabatrolle kunne ikke opdateres. Prøv igen.";
+        }
+        finally
+        {
+            UpdatingDiscountRoleCustomerId = null;
+        }
+    }
 
     private static bool CanDeleteCustomer(User customer) =>
         customer.RegisterDate < DateOnly.FromDateTime(DateTime.Today).AddDays(-30);

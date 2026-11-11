@@ -6,6 +6,7 @@ using System.Threading.RateLimiting;
 using TheSoundOfClick.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Argon2Sharp;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(
@@ -60,6 +61,7 @@ using (JsonDocument secretJson = JsonDocument.Parse(secretFile))
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton(Argon2Parameters.CreateHighSecurity());
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<ProductImageStorage>();
 builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<DiscountRepository>();
 builder.Services.AddScoped<ProductRepository>();
@@ -69,7 +71,11 @@ builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserLoginRepository>();
 builder.Services.AddScoped<PasswordResetRepository>();
+builder.Services.AddSingleton<LoginSecurityRepository>();
+builder.Services.AddScoped<SmtpEmailSender>();
 builder.Services.AddScoped<PasswordResetEmailSender>();
+builder.Services.AddScoped<LoginApprovalEmailSender>();
+builder.Services.AddScoped<LoginApprovalService>();
 builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<HashingService>();
 builder.Services.AddScoped<LoginService>();
@@ -87,6 +93,14 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+await app.Services.GetRequiredService<LoginSecurityRepository>().EnsureCreatedAsync();
+await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
+{
+  await scope.ServiceProvider.GetRequiredService<ProductRepository>().EnsureImageTableCreatedAsync();
+}
+string productImageDirectory = Path.Combine(builder.Environment.ContentRootPath, "Image");
+Directory.CreateDirectory(productImageDirectory);
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -97,6 +111,11 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseRateLimiter();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(productImageDirectory),
+    RequestPath = "/Image"
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

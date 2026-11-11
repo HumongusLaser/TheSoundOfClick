@@ -50,6 +50,25 @@
                     Email eller adgangskode er forkert.
                 </p>
             }
+            else if (Error == "locked")
+            {
+                <p class="auth-message" role="alert">
+                    Din konto er låst. Åbn e-mailen, vi har sendt, og godkend oplåsningen, før du prøver at logge ind igen.
+                </p>
+            }
+            else if (Error == "approval-email-failed")
+            {
+                <p class="auth-message" role="alert">
+                    Vi kunne ikke sende godkendelsesmailen. Prøv igen senere.
+                </p>
+            }
+
+            @if (Approved == "1")
+            {
+                <p class="auth-message" role="status">
+                    Kontoen er låst op. Log ind med din adgangskode.
+                </p>
+            }
 
             <div class="auth-footer">
                 <p>
@@ -69,4 +88,7 @@
 
     [SupplyParameterFromQuery(Name = "returnUrl")]
     private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "approved")]
+    private string? Approved { get; set; }
 }

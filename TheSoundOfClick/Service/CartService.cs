@@ -16,6 +16,17 @@ public class CartService(
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
 
+        if (userId is not Guid customerId)
+        {
+            throw new UnauthorizedAccessException("Du skal være logget ind som kunde for at lægge varer i kurven.");
+        }
+
+        User user = await userService.GetByID(customerId);
+        if (user.Role != UserRole.Customer)
+        {
+            throw new UnauthorizedAccessException("Kun kunder kan lægge varer i kurven.");
+        }
+
         Cart cart = await GetOrCreateCurrentCartAsync(userId);
 
         return await cartRepository.AddCartItemAsync(cart.ID, productId, quantity);

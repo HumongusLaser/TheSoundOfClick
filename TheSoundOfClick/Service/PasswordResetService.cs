@@ -35,12 +35,12 @@ public class PasswordResetService(
 
         try
         {
-            string baseUrl = configuration["PasswordReset:BaseUrl"]
-                ?? throw new InvalidOperationException("Password reset base URL is not configured.");
+            string baseUrl = configuration["Application:BaseUrl"]
+                ?? throw new InvalidOperationException("Application base URL is not configured.");
             if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri) ||
                 (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
             {
-                throw new InvalidOperationException("Password reset base URL must be an absolute HTTP or HTTPS URL.");
+                throw new InvalidOperationException("Application base URL must be an absolute HTTP or HTTPS URL.");
             }
 
             string resetUrl = new Uri(

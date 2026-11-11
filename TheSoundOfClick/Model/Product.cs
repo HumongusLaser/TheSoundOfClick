@@ -32,6 +32,9 @@ public abstract class Product
   [JsonIgnore]
   public Guid ID { get; set; }
 
+  [JsonIgnore]
+  public string? ImagePath { get; set; }
+
   private int stock;
   [JsonIgnore]
   public int Stock 

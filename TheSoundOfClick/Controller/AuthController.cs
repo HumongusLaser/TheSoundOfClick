@@ -14,23 +14,48 @@ public class AuthController : ControllerBase
 {
     [HttpPost("signin")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SignIn([FromForm] SignInRequest request, [FromServices] UserService userService)
+    public async Task<IActionResult> SignIn(
+        [FromForm] SignInRequest request,
+        [FromServices] UserService userService,
+        [FromServices] LoginApprovalService loginApprovalService,
+        [FromServices] ILogger<AuthController> logger)
     {
+        string failureUrl = BuildSignInUrl(request.ReturnUrl, "invalid");
         User user;
+        try
+        {
+            user = await userService.GetByEmail(request.Email);
+        }
+        catch (NotFoundException)
+        {
+            return LocalRedirect(failureUrl);
+        }
+
+        if (await loginApprovalService.IsLockedAsync(user.ID))
+        {
+            return LocalRedirect(BuildSignInUrl(request.ReturnUrl, "locked"));
+        }
+
         try
         {
             user = await userService.GetByEmailWithAuth(request.Email, request.Password);
         }
         catch (NotFoundException)
         {
-            string failureUrl = "/login?error=invalid";
-            if (Url.IsLocalUrl(request.ReturnUrl))
+            try
             {
-                failureUrl += $"&returnUrl={Uri.EscapeDataString(request.ReturnUrl)}";
+                await loginApprovalService.RecordFailedAttemptAsync(user);
+            }
+            catch (LoginApprovalEmailException exception)
+            {
+                logger.LogError(exception, "Could not send login approval email for user {UserId}.", user.ID);
+                return LocalRedirect(BuildSignInUrl(request.ReturnUrl, "approval-email-failed"));
             }
 
             return LocalRedirect(failureUrl);
         }
+
+        await loginApprovalService.ClearAsync(user.ID);
 
         var claims = new List<Claim>
         {
@@ -49,6 +74,18 @@ public class AuthController : ControllerBase
         return Url.IsLocalUrl(request.ReturnUrl)
             ? LocalRedirect(request.ReturnUrl!)
             : LocalRedirect("/");
+    }
+
+    [HttpPost("approve-login")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveLogin(
+        [FromForm] string token,
+        [FromServices] LoginApprovalService loginApprovalService)
+    {
+        bool approved = await loginApprovalService.ApproveAsync(token);
+        return approved
+            ? LocalRedirect("/login?approved=1")
+            : LocalRedirect("/approve-login?invalid=1");
     }
 
     [HttpPost("signout")]
@@ -91,6 +128,17 @@ public class AuthController : ControllerBase
             logger.LogError(exception, "Could not delete customer account {UserId}.", userId);
             return LocalRedirect("/profile?accountDelete=failed");
         }
+    }
+
+    private string BuildSignInUrl(string? returnUrl, string error)
+    {
+        string loginUrl = $"/login?error={Uri.EscapeDataString(error)}";
+        if (Url.IsLocalUrl(returnUrl))
+        {
+            loginUrl += $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
+        }
+
+        return loginUrl;
     }
 
     [HttpPost("register")]

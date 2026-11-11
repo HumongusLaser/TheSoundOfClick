@@ -26,12 +26,17 @@
                 <div class="col-12 col-lg-6">
 
                     <div class="product-details-image">
-
-                        <div class="product-image-placeholder">
-                            <i class="bi bi-image"></i>
-                            <p>Produktbillede kommer snart</p>
-                        </div>
-
+                        @if (!string.IsNullOrWhiteSpace(product.ImagePath))
+                        {
+                            <img src="@product.ImagePath" alt="@product.Name" />
+                        }
+                        else
+                        {
+                            <div class="product-image-placeholder">
+                                <i class="bi bi-image"></i>
+                                <p>Produktbillede kommer snart</p>
+                            </div>
+                        }
                     </div>
 
                 </div>
@@ -88,13 +93,9 @@
                                         @onclick="DecreaseQuantity">
                                     −
                                 </button>
-                                <input type="number"
-                                       class="form-control text-center"
-                                       min="1"
-                                       max="@product.Stock"
-                                       @bind="Quantity"
-                                       @bind:event="oninput"
-                                       disabled="@(product.Stock <= 0)" />
+                                <span class="form-control text-center" aria-live="polite">
+                                    @Quantity
+                                </span>
                                 <button type="button"
                                         class="btn btn-outline-secondary"
                                         aria-label="Forøg antal"
@@ -121,7 +122,10 @@
                         }
                         @if (!string.IsNullOrEmpty(CartError))
                         {
-                            <p class="text-danger mt-2" role="alert">@CartError</p>
+                            <p class="cart-action-alert mt-3" role="alert">
+                                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+                                <span>@CartError</span>
+                            </p>
                         }
 
                     </div>
@@ -153,6 +157,7 @@
                                     case nameof(product.Name)
                                         or nameof(product.Description)
                                         or nameof(product.ID)
+                                        or nameof(product.ImagePath)
                                         or nameof(product.Price)
                                         or nameof(product.Stock):
                                         break;
@@ -164,7 +169,9 @@
                                             </th>
 
                                             <td>
-                                                @propCached.Property.GetValue(product)
+                                                @(propCached.Property.GetValue(product) is bool value
+                                                    ? value ? "Ja" : "Nej"
+                                                    : propCached.Property.GetValue(product))
                                             </td>
                                         </tr>
                                         break;
@@ -268,8 +275,15 @@
             return;
         }
 
-        await CartService.AddToCartAsync(product.ID, userId, Quantity);
-        CartMessage = $"{Quantity} stk. {product.Name} blev lagt i kurven.";
+        try
+        {
+            await CartService.AddToCartAsync(product.ID, userId, Quantity);
+            CartMessage = $"{Quantity} stk. {product.Name} blev lagt i kurven.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            CartError = "Kun kunder kan lægge varer i kurven.";
+        }
     }
 
     private void DecreaseQuantity()

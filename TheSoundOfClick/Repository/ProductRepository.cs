@@ -17,14 +17,34 @@ public class ProductRepository
     m_logger = logger;
   }
 
-  public async Task<Guid> CreateAsync(Product product)
+  public async Task EnsureImageTableCreatedAsync()
   {
     await using var connection = await m_dataSource.OpenConnectionAsync();
+    await using var command = new NpgsqlCommand(
+      """
+      CREATE TABLE IF NOT EXISTS product_images (
+          product_id uuid PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+          image_path text NOT NULL
+      )
+      """,
+      connection);
+    await command.ExecuteNonQueryAsync();
+  }
+
+  public async Task<Guid> CreateAsync(Product product)
+  {
+    return await CreateAsync(product, null);
+  }
+
+  public async Task<Guid> CreateAsync(Product product, string? imagePath)
+  {
+    await using var connection = await m_dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
     await using var cmd = new NpgsqlCommand
     (
       @"INSERT INTO products (stock, name, price, color, description, net_weight, category, details)
         VALUES(@stock, @name, @price, @color, @description, @net_weight, @category, @details)
-        RETURNING id", connection
+        RETURNING id", connection, transaction
     );
 
 
@@ -40,16 +60,156 @@ public class ProductRepository
       Value = ProductFactory.SerializeDetails(product)
     });
 
-    return (Guid)(await cmd.ExecuteScalarAsync()
+    Guid productId = (Guid)(await cmd.ExecuteScalarAsync()
       ?? throw new NpgsqlException("Could not create product."));
+
+    if (imagePath is not null)
+    {
+      await using var imageCommand = new NpgsqlCommand(
+        "INSERT INTO product_images (product_id, image_path) VALUES (@product_id, @image_path)",
+        connection,
+        transaction);
+      imageCommand.Parameters.AddWithValue("product_id", productId);
+      imageCommand.Parameters.AddWithValue("image_path", imagePath);
+      await imageCommand.ExecuteNonQueryAsync();
+    }
+
+    await transaction.CommitAsync();
+    return productId;
   }
+
+  public async Task UpdateAsync(Product product, string? imagePath)
+  {
+    await using var connection = await m_dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+    await using var command = new NpgsqlCommand(
+      """
+      UPDATE products
+      SET stock = @stock,
+          name = @name,
+          price = @price,
+          color = @color,
+          description = @description,
+          net_weight = @net_weight,
+          category = @category,
+          details = @details
+      WHERE id = @id
+      """,
+      connection,
+      transaction);
+    command.Parameters.AddWithValue("stock", product.Stock);
+    command.Parameters.AddWithValue("name", product.Name);
+    command.Parameters.AddWithValue("price", product.Price);
+    command.Parameters.AddWithValue("color", product.Color);
+    command.Parameters.AddWithValue("description", product.Description);
+    command.Parameters.AddWithValue("net_weight", product.NetWeight);
+    command.Parameters.AddWithValue("category", ProductFactory.GetCategory(product));
+    command.Parameters.Add(new NpgsqlParameter("details", NpgsqlDbType.Jsonb)
+    {
+      Value = ProductFactory.SerializeDetails(product)
+    });
+    command.Parameters.AddWithValue("id", product.ID);
+
+    if (await command.ExecuteNonQueryAsync() != 1)
+    {
+      throw new NotFoundException($"No such product with id {product.ID}");
+    }
+
+    if (imagePath is not null)
+    {
+      await using var imageCommand = new NpgsqlCommand(
+        """
+        INSERT INTO product_images (product_id, image_path)
+        VALUES (@product_id, @image_path)
+        ON CONFLICT (product_id) DO UPDATE SET image_path = EXCLUDED.image_path
+        """,
+        connection,
+        transaction);
+      imageCommand.Parameters.AddWithValue("product_id", product.ID);
+      imageCommand.Parameters.AddWithValue("image_path", imagePath);
+      await imageCommand.ExecuteNonQueryAsync();
+    }
+
+    await transaction.CommitAsync();
+  }
+
+  public async Task<string?> DeleteAsync(Guid productId)
+  {
+    await using var connection = await m_dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+
+    await using (var lockCommand = new NpgsqlCommand(
+      "SELECT id FROM products WHERE id = @id FOR UPDATE",
+      connection,
+      transaction))
+    {
+      lockCommand.Parameters.AddWithValue("id", productId);
+      if (await lockCommand.ExecuteScalarAsync() is null)
+      {
+        throw new NotFoundException($"No such product with id {productId}");
+      }
+    }
+
+    await using (var orderCommand = new NpgsqlCommand(
+      "SELECT EXISTS (SELECT 1 FROM order_items WHERE product_id = @product_id)",
+      connection,
+      transaction))
+    {
+      orderCommand.Parameters.AddWithValue("product_id", productId);
+      if ((bool?)await orderCommand.ExecuteScalarAsync() == true)
+      {
+        throw new InvalidOperationException("Produkter, der indgår i tidligere ordrer, kan ikke slettes.");
+      }
+    }
+
+    string? imagePath;
+    await using (var imageCommand = new NpgsqlCommand(
+      "SELECT image_path FROM product_images WHERE product_id = @product_id",
+      connection,
+      transaction))
+    {
+      imageCommand.Parameters.AddWithValue("product_id", productId);
+      imagePath = await imageCommand.ExecuteScalarAsync() as string;
+    }
+
+    await using (var cartCommand = new NpgsqlCommand(
+      "DELETE FROM cart_items WHERE product_id = @product_id",
+      connection,
+      transaction))
+    {
+      cartCommand.Parameters.AddWithValue("product_id", productId);
+      await cartCommand.ExecuteNonQueryAsync();
+    }
+
+    await using (var deleteCommand = new NpgsqlCommand(
+      "DELETE FROM products WHERE id = @id",
+      connection,
+      transaction))
+    {
+      deleteCommand.Parameters.AddWithValue("id", productId);
+      if (await deleteCommand.ExecuteNonQueryAsync() != 1)
+      {
+        throw new NotFoundException($"No such product with id {productId}");
+      }
+    }
+
+    await transaction.CommitAsync();
+    return imagePath;
+  }
+
     public async Task<Product> GetProductAsync(Guid id)
     {
         Product? product = null;
         await using var connection = await m_dataSource.OpenConnectionAsync();
 
         await using var cmd = new NpgsqlCommand(
-            "SELECT id, name, price, stock, color, description, net_weight, category, details FROM products WHERE id = @id",
+            """
+            SELECT p.id, p.name, p.price, p.stock, p.color, p.description,
+                   p.net_weight, p.category, p.details, pi.image_path
+            FROM products p
+            LEFT JOIN product_images pi ON pi.product_id = p.id
+            WHERE p.id = @id
+            """,
             connection
         );
         cmd.Parameters.AddWithValue("id", id);
@@ -77,6 +237,7 @@ public class ProductRepository
             product.Color = color;
             product.Description = description;
             product.NetWeight = netWeight;
+            product.ImagePath = reader.IsDBNull(9) ? null : reader.GetString(9);
         }
         
         if (product == null)
@@ -93,10 +254,12 @@ public class ProductRepository
 
         await using var cmd = new NpgsqlCommand(
             """
-            SELECT id, name, price, stock, color, description, net_weight, category, details
-            FROM products
-            WHERE id > @id AND (@category IS NULL OR category = @category)
-            ORDER BY id
+            SELECT p.id, p.name, p.price, p.stock, p.color, p.description,
+                   p.net_weight, p.category, p.details, pi.image_path
+            FROM products p
+            LEFT JOIN product_images pi ON pi.product_id = p.id
+            WHERE p.id > @id AND (@category IS NULL OR p.category = @category)
+            ORDER BY p.id
             LIMIT @BatchSize
             """,
             connection);
@@ -142,6 +305,7 @@ public class ProductRepository
             product.Color = color;
             product.Description = description;
             product.NetWeight = netWeight;
+            product.ImagePath = reader.IsDBNull(9) ? null : reader.GetString(9);
 
             products.Add(product);   
         }
@@ -160,19 +324,19 @@ public class ProductRepository
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
 
         const string filter = """
-            WHERE length(btrim(name)) >= 2
-              AND (@category IS NULL OR category = @category)
+            WHERE length(btrim(p.name)) >= 2
+              AND (@category IS NULL OR p.category = @category)
               AND (
                   @search IS NULL
-                  OR name ILIKE @search
-                  OR id::text ILIKE @search
+                  OR p.name ILIKE @search
+                  OR p.id::text ILIKE @search
               )
             """;
 
         await using var connection = await m_dataSource.OpenConnectionAsync(cancellationToken);
 
         await using var countCommand = new NpgsqlCommand(
-            $"SELECT COUNT(*) FROM products {filter}",
+            $"SELECT COUNT(*) FROM products p {filter}",
             connection);
         AddProductSearchParameters(countCommand, category, search);
         int totalCount = Convert.ToInt32(
@@ -180,15 +344,17 @@ public class ProductRepository
 
         const string orderBy = """
             ORDER BY
-                CASE WHEN @sort_order = 'name' THEN name END ASC,
-                CASE WHEN @sort_order = 'priceAsc' THEN price END ASC,
-                CASE WHEN @sort_order = 'priceDesc' THEN price END DESC,
-                id ASC
+                CASE WHEN @sort_order = 'name' THEN p.name END ASC,
+                CASE WHEN @sort_order = 'priceAsc' THEN p.price END ASC,
+                CASE WHEN @sort_order = 'priceDesc' THEN p.price END DESC,
+                p.id ASC
             """;
         await using var pageCommand = new NpgsqlCommand(
             $"""
-            SELECT id, name, price, stock, color, description, net_weight, category, details
-            FROM products
+            SELECT p.id, p.name, p.price, p.stock, p.color, p.description,
+                   p.net_weight, p.category, p.details, pi.image_path
+            FROM products p
+            LEFT JOIN product_images pi ON pi.product_id = p.id
             {filter}
             {orderBy}
             LIMIT @page_size OFFSET @offset
@@ -215,6 +381,7 @@ public class ProductRepository
             product.Color = reader.GetString(4);
             product.Description = reader.GetString(5);
             product.NetWeight = reader.GetInt32(6);
+            product.ImagePath = reader.IsDBNull(9) ? null : reader.GetString(9);
             products.Add(product);
         }
 

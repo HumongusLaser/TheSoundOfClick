@@ -2,17 +2,18 @@
 @rendermode InteractiveServer
 
 @inject ProductService ProductService
+@inject ProductImageStorage ProductImageStorage
 @inject ILogger<Products> Logger
 @using System.Globalization
 @using System.Reflection
 @using System.Data.Common
 @using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Authorization
 
 @using Microsoft.AspNetCore.RateLimiting
 
 @attribute [EnableRateLimiting("products")]
-
-@* @attribute [Authorize(Roles = "Employee,Admin")] *@
+@attribute [Authorize(Roles = "Employee,Admin")]
 
 <PageTitle>Administrer produkter | The Sound Of Click</PageTitle>
 
@@ -118,7 +119,7 @@
         else
         {
             <div class="table-responsive mt-3">
-                <table class="table">
+                <table class="table admin-table product-admin-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -146,16 +147,18 @@
                                     <td>
                                         <div class="d-flex gap-2">
                                             <button type="button"
-                                                    class="page-button-outline"
+                                                    class="page-button-outline product-list-action"
                                                     title="Rediger produkt"
+                                                    aria-label="@($"Rediger {product.Name}")"
                                                     @onclick="() => OpenEditPopup(product)">
-                                                ✏️
+                                                <i class="bi bi-pencil" aria-hidden="true"></i>
                                             </button>
                                             <button type="button"
-                                                    class="page-button-outline"
+                                                    class="page-button-outline product-list-action"
                                                     title="Slet produkt"
+                                                    aria-label="@($"Slet {product.Name}")"
                                                     @onclick="() => OpenDeletePopup(product)">
-                                                🗑️
+                                                <i class="bi bi-trash3" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -252,6 +255,26 @@
                         }
                     </div>
                 }
+
+                <div class="col-12">
+                    <label class="form-label" for="create-product-image">
+                        Produktbillede (valgfrit, PNG/JPEG/WebP, maks. 5 MB)
+                    </label>
+                    <InputFile id="create-product-image"
+                               class="form-control"
+                               disabled="@string.IsNullOrEmpty(NewProductCategory)"
+                               accept="image/png,image/jpeg,image/webp"
+                               OnChange="OnProductImageSelected" />
+                    <small class="form-text text-muted">
+                        @(string.IsNullOrEmpty(NewProductCategory)
+                            ? "Vælg først en kategori for at tilføje et billede."
+                            : "Træk et billede ind i feltet, eller klik for at vælge en fil.")
+                        @if (SelectedProductImage is not null)
+                        {
+                            <span>Valgt: @SelectedProductImage.Name</span>
+                        }
+                    </small>
+                </div>
             </div>
 
             @if (!string.IsNullOrEmpty(CreateError))
@@ -281,6 +304,131 @@
     </div>
 }
 
+@if (EditingProduct is not null)
+{
+    <div class="profile-modal-overlay">
+        <div class="profile-modal" role="dialog" aria-modal="true" aria-label="Rediger produkt">
+            <h3>Rediger produkt</h3>
+            <p class="page-description">
+                @GetCategoryDisplayName(EditingProduct)
+            </p>
+            <hr />
+
+            <div class="row g-3">
+                @foreach (CachedProperty property in EditProductProperties)
+                {
+                    var propertyType = Nullable.GetUnderlyingType(property.Property.PropertyType)
+                        ?? property.Property.PropertyType;
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="@($"edit-{property.Property.Name}")">
+                            @(property.UserPageName ?? property.Property.Name)
+                        </label>
+
+                        @if (propertyType == typeof(bool))
+                        {
+                            <select id="@($"edit-{property.Property.Name}")"
+                                    class="form-select"
+                                    value="@GetEditPropertyValue(property.Property)"
+                                    @onchange="e => SetEditPropertyValue(property.Property, e.Value?.ToString())">
+                                <option value="">Vælg</option>
+                                <option value="true">Ja</option>
+                                <option value="false">Nej</option>
+                            </select>
+                        }
+                        else if (propertyType == typeof(string) &&
+                                 property.Property.Name == nameof(Product.Description))
+                        {
+                            <textarea id="@($"edit-{property.Property.Name}")"
+                                      class="form-control"
+                                      rows="3"
+                                      value="@GetEditPropertyValue(property.Property)"
+                                      @oninput="e => SetEditPropertyValue(property.Property, e.Value?.ToString())">
+                            </textarea>
+                        }
+                        else
+                        {
+                            <input id="@($"edit-{property.Property.Name}")"
+                                   type="@GetCreateInputType(propertyType)"
+                                   step="@(propertyType == typeof(decimal) ? "0.01" : null)"
+                                   min="@(propertyType == typeof(int) || propertyType == typeof(decimal) ? "0" : null)"
+                                   class="form-control"
+                                   value="@GetEditPropertyValue(property.Property)"
+                                   @oninput="e => SetEditPropertyValue(property.Property, e.Value?.ToString())" />
+                        }
+                    </div>
+                }
+
+                <div class="col-12">
+                    <label class="form-label" for="edit-product-image">
+                        Erstat produktbillede (valgfrit, PNG/JPEG/WebP, maks. 5 MB)
+                    </label>
+                    <InputFile id="edit-product-image"
+                               class="form-control"
+                               accept="image/png,image/jpeg,image/webp"
+                               OnChange="OnEditProductImageSelected" />
+                    <small class="form-text text-muted">
+                        @if (SelectedEditProductImage is not null)
+                        {
+                            <span>Valgt: @SelectedEditProductImage.Name</span>
+                        }
+                        else if (!string.IsNullOrEmpty(EditingProduct.ImagePath))
+                        {
+                            <span>Det nuværende billede beholdes, hvis du ikke vælger et nyt.</span>
+                        }
+                        else
+                        {
+                            <span>Produktet har endnu ikke et billede.</span>
+                        }
+                    </small>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(EditError))
+            {
+                <p class="text-danger mt-3" role="alert">@EditError</p>
+            }
+
+            <div class="profile-modal-actions">
+                <button type="button" class="page-button-outline" @onclick="CloseEditPopup">
+                    Annuller
+                </button>
+                <button type="button" class="page-button" @onclick="SaveProductChangesAsync">
+                    Gem ændringer
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (DeletingProduct is not null)
+{
+    <div class="profile-modal-overlay">
+        <div class="profile-modal" role="dialog" aria-modal="true" aria-label="Bekræft sletning">
+            <h3>Slet produkt</h3>
+            <p>
+                Er du sikker på, at du vil slette <strong>@DeletingProduct.Name</strong>?
+            </p>
+            <p class="text-muted">
+                Produktet fjernes også fra kundernes indkøbskurve. Produkter i tidligere ordrer kan ikke slettes.
+            </p>
+
+            @if (!string.IsNullOrEmpty(DeleteError))
+            {
+                <p class="text-danger mt-3" role="alert">@DeleteError</p>
+            }
+
+            <div class="profile-modal-actions">
+                <button type="button" class="page-button-outline" @onclick="CloseDeletePopup">
+                    Annuller
+                </button>
+                <button type="button" class="page-button" @onclick="ConfirmDeleteProductAsync">
+                    Ja, slet produkt
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
 
@@ -301,7 +449,14 @@
     private string CreateError = "";
     private string CreateSuccess = "";
     private string NewProductCategory = "";
+    private IBrowserFile? SelectedProductImage;
     private readonly Dictionary<string, string> CreatePropertyValues = [];
+    private Product? EditingProduct;
+    private Product? DeletingProduct;
+    private string EditError = "";
+    private string DeleteError = "";
+    private IBrowserFile? SelectedEditProductImage;
+    private readonly Dictionary<string, string> EditPropertyValues = [];
 
     private IEnumerable<CachedProperty> CreateProductProperties
     {
@@ -316,10 +471,21 @@
             return PropertyNameHelper.GetPropertiesWithMetaData(productType)
                 .Where(property =>
                     property.Property.Name != nameof(Product.ID) &&
+                    property.Property.Name != nameof(Product.ImagePath) &&
                     property.Property.SetMethod?.IsPublic == true &&
                     IsSupportedCreatePropertyType(property.Property.PropertyType));
         }
     }
+
+    private IEnumerable<CachedProperty> EditProductProperties =>
+        EditingProduct is null
+            ? []
+            : PropertyNameHelper.GetPropertiesWithMetaData(EditingProduct.GetType())
+                .Where(property =>
+                    property.Property.Name != nameof(Product.ID) &&
+                    property.Property.Name != nameof(Product.ImagePath) &&
+                    property.Property.SetMethod?.IsPublic == true &&
+                    IsSupportedCreatePropertyType(property.Property.PropertyType));
 
     private Type? GetSelectedProductType()
     {
@@ -380,6 +546,7 @@
     {
         NewProductCategory = "";
         CreatePropertyValues.Clear();
+        SelectedProductImage = null;
         CreateError = "";
         CreateSuccess = "";
         ShowCreatePopup = true;
@@ -390,6 +557,10 @@
         NewProductCategory = args.Value?.ToString() ?? "";
         CreateError = "";
         CreatePropertyValues.Clear();
+        if (string.IsNullOrEmpty(NewProductCategory))
+        {
+            SelectedProductImage = null;
+        }
 
         Type? productType = GetSelectedProductType();
         if (productType is null)
@@ -415,6 +586,27 @@
                 _ => value.ToString() ?? ""
             };
         }
+    }
+
+    private void OnProductImageSelected(InputFileChangeEventArgs args)
+    {
+        CreateError = "";
+        if (string.IsNullOrEmpty(NewProductCategory))
+        {
+            SelectedProductImage = null;
+            CreateError = "Vælg først en produktkategori.";
+            return;
+        }
+
+        IBrowserFile selectedImage = args.File;
+        if (selectedImage.Size is <= 0 or > ProductImageStorage.MaxFileSize)
+        {
+            SelectedProductImage = null;
+            CreateError = "Billedet skal være mindre end 5 MB.";
+            return;
+        }
+
+        SelectedProductImage = selectedImage;
     }
 
     private string GetCreatePropertyValue(PropertyInfo property)
@@ -506,7 +698,33 @@
 
         try
         {
-            await ProductService.CreateProductAsync(product);
+            string? imagePath = null;
+            if (SelectedProductImage is not null)
+            {
+                imagePath = await ProductImageStorage.SaveAsync(SelectedProductImage);
+            }
+
+            try
+            {
+                await ProductService.CreateProductAsync(product, imagePath);
+            }
+            catch (DbException)
+            {
+                if (imagePath is not null)
+                {
+                    try
+                    {
+                        await ProductImageStorage.DeleteAsync(imagePath);
+                    }
+                    catch (IOException cleanupException)
+                    {
+                        Logger.LogError(cleanupException, "Could not remove an image after product creation failed.");
+                    }
+                }
+
+                throw;
+            }
+
             SearchText = product.Name;
             SelectedCategory = "all";
             await RefreshProductListAsync();
@@ -518,14 +736,271 @@
             Logger.LogError(exception, "Could not create product in category {Category}.", NewProductCategory);
             CreateError = "Produktet kunne ikke gemmes. Kontrollér oplysningerne, og prøv igen.";
         }
+        catch (InvalidDataException exception)
+        {
+            Logger.LogWarning(exception, "Rejected an invalid product image.");
+            CreateError = exception.Message;
+        }
+        catch (IOException exception)
+        {
+            Logger.LogError(exception, "Could not save product image for category {Category}.", NewProductCategory);
+            CreateError = "Billedet kunne ikke gemmes. Kontrollér filen, og prøv igen.";
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            Logger.LogError(exception, "Could not access the product image folder.");
+            CreateError = "Billedet kunne ikke gemmes. Kontrollér mappens tilladelser, og prøv igen.";
+        }
     }
 
 
     private void OpenEditPopup(Product product)
     {
+        EditingProduct = product;
+        EditError = "";
+        CreateSuccess = "";
+        SelectedEditProductImage = null;
+        EditPropertyValues.Clear();
+
+        foreach (CachedProperty property in EditProductProperties)
+        {
+            object? value = property.Property.GetValue(product);
+            EditPropertyValues[property.Property.Name] = value switch
+            {
+                null => "",
+                bool boolean => boolean ? "true" : "false",
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => value.ToString() ?? ""
+            };
+        }
     }
 
     private void OpenDeletePopup(Product product)
     {
+        DeletingProduct = product;
+        DeleteError = "";
+        CreateSuccess = "";
+    }
+
+    private string GetEditPropertyValue(PropertyInfo property)
+    {
+        return EditPropertyValues.GetValueOrDefault(property.Name, "");
+    }
+
+    private void SetEditPropertyValue(PropertyInfo property, string? value)
+    {
+        EditPropertyValues[property.Name] = value ?? "";
+        EditError = "";
+    }
+
+    private void OnEditProductImageSelected(InputFileChangeEventArgs args)
+    {
+        EditError = "";
+        IBrowserFile selectedImage = args.File;
+        if (selectedImage.Size is <= 0 or > ProductImageStorage.MaxFileSize)
+        {
+            SelectedEditProductImage = null;
+            EditError = "Billedet skal være mindre end 5 MB.";
+            return;
+        }
+
+        SelectedEditProductImage = selectedImage;
+    }
+
+    private void CloseEditPopup()
+    {
+        EditingProduct = null;
+        SelectedEditProductImage = null;
+        EditPropertyValues.Clear();
+        EditError = "";
+    }
+
+    private async Task SaveProductChangesAsync()
+    {
+        if (EditingProduct is not Product product)
+        {
+            return;
+        }
+
+        EditError = "";
+        foreach (CachedProperty property in EditProductProperties)
+        {
+            string value = GetEditPropertyValue(property.Property);
+            Type propertyType = Nullable.GetUnderlyingType(property.Property.PropertyType)
+                ?? property.Property.PropertyType;
+
+            try
+            {
+                if (propertyType == typeof(string) && string.IsNullOrWhiteSpace(value))
+                {
+                    EditError = $"{property.UserPageName ?? property.Property.Name} skal udfyldes.";
+                    return;
+                }
+
+                object? convertedValue = propertyType == typeof(string)
+                    ? value.Trim()
+                    : propertyType == typeof(bool)
+                        ? bool.Parse(value)
+                        : Convert.ChangeType(value, propertyType, CultureInfo.InvariantCulture);
+
+                property.Property.SetValue(product, convertedValue);
+            }
+            catch (Exception exception) when (
+                exception is FormatException or OverflowException or ArgumentException or
+                TargetInvocationException)
+            {
+                EditError = $"{property.UserPageName ?? property.Property.Name}: " +
+                    (exception is TargetInvocationException { InnerException: not null } invocationException
+                        ? invocationException.InnerException?.Message ?? exception.Message
+                        : exception.Message);
+                return;
+            }
+        }
+
+        string? oldImagePath = product.ImagePath;
+        string? newImagePath = null;
+        try
+        {
+            if (SelectedEditProductImage is not null)
+            {
+                newImagePath = await ProductImageStorage.SaveAsync(SelectedEditProductImage);
+            }
+
+            try
+            {
+                await ProductService.UpdateProductAsync(product, newImagePath);
+            }
+            catch (Exception exception) when (
+                exception is DbException or NotFoundException or InvalidOperationException)
+            {
+                if (newImagePath is not null)
+                {
+                    try
+                    {
+                        await ProductImageStorage.DeleteAsync(newImagePath);
+                    }
+                    catch (Exception cleanupException) when (
+                        cleanupException is IOException or UnauthorizedAccessException)
+                    {
+                        Logger.LogError(cleanupException, "Could not remove a replacement image after product update failed.");
+                    }
+                }
+
+                throw;
+            }
+
+            if (newImagePath is not null)
+            {
+                product.ImagePath = newImagePath;
+                if (!string.IsNullOrEmpty(oldImagePath))
+                {
+                    try
+                    {
+                        await ProductImageStorage.DeleteAsync(oldImagePath);
+                    }
+                    catch (Exception exception) when (
+                        exception is IOException or UnauthorizedAccessException)
+                    {
+                        Logger.LogError(exception, "Could not remove the previous image for product {ProductId}.", product.ID);
+                        CreateSuccess = $"Produktet {product.Name} blev gemt, men det gamle billede kunne ikke fjernes.";
+                    }
+                }
+            }
+
+            SearchText = product.Name;
+            SelectedCategory = "all";
+            await RefreshProductListAsync();
+            if (string.IsNullOrEmpty(CreateSuccess))
+            {
+                CreateSuccess = $"Produktet {product.Name} blev opdateret.";
+            }
+            CloseEditPopup();
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not update product {ProductId}.", product.ID);
+            EditError = "Produktet kunne ikke gemmes. Kontrollér oplysningerne, og prøv igen.";
+        }
+        catch (NotFoundException exception)
+        {
+            Logger.LogWarning(exception, "Could not update missing product {ProductId}.", product.ID);
+            EditError = "Produktet findes ikke længere. Opdatér produktlisten, og prøv igen.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            Logger.LogWarning(exception, "Could not update product {ProductId}.", product.ID);
+            EditError = exception.Message;
+        }
+        catch (InvalidDataException exception)
+        {
+            Logger.LogWarning(exception, "Rejected an invalid replacement image for product {ProductId}.", product.ID);
+            EditError = exception.Message;
+        }
+        catch (IOException exception)
+        {
+            Logger.LogError(exception, "Could not save an image for product {ProductId}.", product.ID);
+            EditError = "Produktbilledet kunne ikke gemmes. Kontrollér filen, og prøv igen.";
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            Logger.LogError(exception, "Could not access the product image folder.");
+            EditError = "Produktbilledet kunne ikke gemmes. Kontrollér mappens tilladelser, og prøv igen.";
+        }
+    }
+
+    private void CloseDeletePopup()
+    {
+        DeletingProduct = null;
+        DeleteError = "";
+    }
+
+    private async Task ConfirmDeleteProductAsync()
+    {
+        if (DeletingProduct is not Product product)
+        {
+            return;
+        }
+
+        DeleteError = "";
+        try
+        {
+            string? imagePath = await ProductService.DeleteProductAsync(product.ID);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                try
+                {
+                    await ProductImageStorage.DeleteAsync(imagePath);
+                }
+                catch (Exception exception) when (
+                    exception is IOException or UnauthorizedAccessException)
+                {
+                    Logger.LogError(exception, "Product {ProductId} was deleted, but its image could not be removed.", product.ID);
+                    CreateSuccess = $"Produktet {product.Name} blev slettet, men billedfilen kunne ikke fjernes.";
+                }
+            }
+
+            if (string.IsNullOrEmpty(CreateSuccess))
+            {
+                CreateSuccess = $"Produktet {product.Name} blev slettet.";
+            }
+
+            CloseDeletePopup();
+            await RefreshProductListAsync();
+        }
+        catch (InvalidOperationException exception)
+        {
+            Logger.LogInformation(exception, "Product {ProductId} cannot be deleted.", product.ID);
+            DeleteError = exception.Message;
+        }
+        catch (NotFoundException exception)
+        {
+            Logger.LogWarning(exception, "Could not delete missing product {ProductId}.", product.ID);
+            DeleteError = "Produktet findes ikke længere. Opdatér produktlisten, og prøv igen.";
+        }
+        catch (DbException exception)
+        {
+            Logger.LogError(exception, "Could not delete product {ProductId}.", product.ID);
+            DeleteError = "Produktet kunne ikke slettes. Prøv igen.";
+        }
     }
 }

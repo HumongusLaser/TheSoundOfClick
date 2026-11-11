@@ -1,0 +1,27 @@
+@page "/approve-login"
+@using TheSoundOfClick.Components.AuthComponents
+
+<div class="auth-page">
+    <AuthCard Title="Godkend oplåsning"
+              Description="Bekræft, at kontoen må låses op igen. Du skal derefter logge ind med din adgangskode.">
+        @if (string.IsNullOrWhiteSpace(Token))
+        {
+            <p class="auth-message" role="alert">
+                Godkendelseslinket er ugyldigt eller mangler.
+            </p>
+        }
+        else
+        {
+            <form class="auth-form" method="post" action="/api/auth/approve-login">
+                <AntiforgeryToken />
+                <input type="hidden" name="token" value="@Token" />
+                <button type="submit" class="auth-button">Godkend oplåsning</button>
+            </form>
+        }
+    </AuthCard>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "token")]
+    private string? Token { get; set; }
+}

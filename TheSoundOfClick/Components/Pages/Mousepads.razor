@@ -28,6 +28,13 @@
     {
         <p class="text-success" role="status">@CartMessage</p>
     }
+    @if (!string.IsNullOrEmpty(CartError))
+    {
+        <p class="cart-action-alert" role="alert">
+            <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+            <span>@CartError</span>
+        </p>
+    }
 
     <div class="row g-4 mt-3">
         @if (IsLoading)
@@ -40,10 +47,19 @@
             {
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="product-card">
-                        <div class="product-image-placeholder">
-                            <i class="bi bi-image"></i>
-                            <p>Produktbillede kommer snart</p>
-                        </div>
+                        @if (!string.IsNullOrWhiteSpace(mousepad.ImagePath))
+                        {
+                            <div class="product-image">
+                                <img src="@mousepad.ImagePath" alt="@mousepad.Name" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="product-image-placeholder">
+                                <i class="bi bi-image"></i>
+                                <p>Produktbillede kommer snart</p>
+                            </div>
+                        }
                         <div class="product-info">
                             <h3>@mousepad.Name</h3>
                             <p>@mousepad.Description</p>
@@ -82,6 +98,7 @@
     private List<Product> Products = [];
     private string SelectedSort = "default";
     private string? CartMessage;
+    private string? CartError;
     private bool IsLoading = true;
 
     private IEnumerable<Product> SortedMousepads =>
@@ -111,6 +128,8 @@
 
     private async Task AddToCartAsync(Product product)
     {
+        CartMessage = null;
+        CartError = null;
         var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (!Guid.TryParse(
             authenticationState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
@@ -121,8 +140,15 @@
             return;
         }
 
-        await CartService.AddToCartAsync(product.ID, userId);
-        CartMessage = $"{product.Name} blev lagt i kurven.";
+        try
+        {
+            await CartService.AddToCartAsync(product.ID, userId);
+            CartMessage = $"{product.Name} blev lagt i kurven.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            CartError = "Kun kunder kan lægge varer i kurven.";
+        }
     }
 
     private void NavigateToProduct(Guid productId)

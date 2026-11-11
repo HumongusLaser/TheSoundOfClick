@@ -36,8 +36,19 @@ public class ProductService
         return await _productRepository.GetProductAsync(id);
     }
 
-    public async Task CreateProductAsync(Product product)
+    public async Task CreateProductAsync(Product product, string? imagePath = null)
     {
-        product.ID = await _productRepository.CreateAsync(product);
+        product.ImagePath = imagePath;
+        product.ID = await _productRepository.CreateAsync(product, imagePath);
+    }
+
+    public Task UpdateProductAsync(Product product, string? imagePath = null)
+    {
+        return _productRepository.UpdateAsync(product, imagePath);
+    }
+
+    public Task<string?> DeleteProductAsync(Guid productId)
+    {
+        return _productRepository.DeleteAsync(productId);
     }
 }

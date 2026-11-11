@@ -130,6 +130,26 @@ public class UserService(
         await m_userRepo.DeleteCustomerOlderThan30DaysAsync(customerId);
     }
 
+    public async Task UpdateCustomerDiscountRoleAsync(
+        Guid requestingUserId,
+        Guid customerId,
+        DiscountRole discountRole)
+    {
+        await EnsureAdminAsync(requestingUserId);
+        if (!Enum.IsDefined(discountRole))
+        {
+            throw new ArgumentOutOfRangeException(nameof(discountRole), "The discount role is invalid.");
+        }
+
+        User customer = await m_userRepo.GetByID(customerId);
+        if (customer.Role != UserRole.Customer)
+        {
+            throw new NotFoundException("Customer not found.");
+        }
+
+        await m_userRepo.UpdateCustomerDiscountRoleAsync(customerId, discountRole);
+    }
+
     public async Task DeleteOwnCustomerAccountAsync(Guid requestingUserId, Guid customerId)
     {
         if (requestingUserId != customerId)
